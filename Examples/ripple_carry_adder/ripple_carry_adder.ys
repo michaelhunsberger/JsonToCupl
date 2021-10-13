@@ -1,0 +1,15 @@
+read_verilog ripple_carry_adder.v
+read_verilog full_adder.v
+hierarchy
+proc
+flatten
+tribuf -logic
+opt
+techmap -map +/techmap.v -map C:\Users\mjhun\Code\repos\JsonToCupl\JsonToCupl\bin\Debug\Yosys\cupl_cells_latch.v
+opt
+dfflibmap -prepare -liberty C:\Users\mjhun\Code\repos\JsonToCupl\JsonToCupl\bin\Debug\Yosys\cupl_dff.lib
+abc -g AND,XOR
+clean
+dfflibmap -liberty C:\Users\mjhun\Code\repos\JsonToCupl\JsonToCupl\bin\Debug\Yosys\cupl_dff.lib
+opt
+write_json ripple_carry_adder.json

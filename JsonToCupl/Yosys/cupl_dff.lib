@@ -1,0 +1,16 @@
+library(xc2_dff) {
+  cell(FDCP) {
+    area: 1;
+    ff("IQ", "IQN") { clocked_on: CK;
+                      next_state: D
+                      clear: "AR";
+                      preset: "AP"; }
+    pin(CK) { direction: input;
+             clock: true; }
+    pin(D) { direction: input; }
+    pin(Q) { direction: output;
+             function: "IQ"; }
+    pin(AR) { direction: input; }
+    pin(AP) { direction: input; }
+  }
+}
