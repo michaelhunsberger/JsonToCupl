@@ -3,10 +3,9 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace JsonToCupl
 {
@@ -58,7 +57,7 @@ namespace JsonToCupl
             T ret;
             if (!dic.TryGetValue(key, out ret))
             {
-                ret = new T();
+                dic[key] = ret = new T();
             }
             return ret;
         }
@@ -66,8 +65,15 @@ namespace JsonToCupl
 
     enum NodeType
     {
-        Pin,
-        Module
+        Unknown,
+        Module,
+        And,
+        Or,
+        Xor,
+        Not,
+        DFF,
+        TBUF,
+        Constant,
     }
 
     enum DirectionType
@@ -91,33 +97,38 @@ namespace JsonToCupl
 
     class PinConnection
     {
-
-        readonly Node _parent;
-        readonly string _name;
-        readonly DirectionType _directionType;
-        public readonly List<PinConnection> Refs = new List<PinConnection>();
-
-        public DirectionType DirectionType => _directionType;
-        public string Name => _name;
-        internal Node Parent => _parent;
+        public List<PinConnection> Refs { get; set; } = new List<PinConnection>();
+        public DirectionType DirectionType { get; set; } = DirectionType.Unknown;
+        public string Name { get; set; }
+        internal Node Parent { get; set; }
 
         public PinConnection(Node parent, string name, DirectionType directionType)
         {
-            _name = name;
-            _parent = parent;
-            _directionType = directionType;
+            this.Name = name;
+            this.Parent = parent;
+            this.DirectionType = directionType;
+        }
+
+        public PinConnection()
+        {
+
         }
     }
 
+
     class JsonPinConnection : PinConnection
     {
-        readonly int _bit;
         public JsonPinConnection(Node parent, string name, DirectionType directionType, int bit) : base(parent, name, directionType)
         {
-            _bit = bit;
+            this.Bit = bit;
         }
 
-        public int Bit => _bit;
+        public JsonPinConnection()
+        {
+
+        }
+        public int Bit { get; set; }
+        public int Constant { get; set; }
     }
 
     class Node
@@ -126,28 +137,44 @@ namespace JsonToCupl
         readonly NodeType _type;
         readonly List<PinConnection> _connections = new List<PinConnection>();
         readonly List<PinConnection> _in = new List<PinConnection>();
-        public Node(string name, NodeType type)
+        readonly int? _constant;
+        public Node(string name, NodeType type, int constant)
         {
             _name = name;
             _type = type;
+            _constant = constant;
         }
 
         public string Name => _name;
         public List<PinConnection> Connections => _connections;
         public NodeType Type => _type;
+        public int? Constant => _constant;
+    }
+
+    interface IContanerNode
+    {
+        List<Node> Nodes { get; }
     }
 
     static class Util
     {
+        public static string GenerateName()
+        {
+            return string.Concat("JTCN", cnt++);
+        }
         public static string GenerateName(string baseName, int ix)
         {
             return string.Concat(baseName, ix.ToString());
         }
+
+        static int cnt = 0;
+
+
     }
 
     class JsonNode : Node
     {
-        public JsonNode(string name, NodeType type) : base(name, type)
+        public JsonNode(string name, NodeType type, int constant = 0) : base(name, type, constant)
         {
         }
     }
@@ -158,29 +185,41 @@ namespace JsonToCupl
         void Build(JToken obj);
     }
 
+
     /*
      * For each input bit, find output bit pin of node
      */
 
-    class JsonModule : JsonNode, IJsonObj
+    class JsonModule : JsonNode, IJsonObj, IContanerNode
     {
         readonly Dictionary<int, JsonPinConnection> _lookup = new Dictionary<int, JsonPinConnection>();
-        readonly List<JsonNode> _jsonNodes = new List<JsonNode>();
         static readonly int[] emptyBits = new int[0];
-
+        static readonly List<Node> _nodes = new List<Node>();
         public JsonModule(string name) : base(name, NodeType.Module)
         {
 
         }
 
-        public void BuildNodeConnections()
+        public List<Node> Nodes => _nodes;
+
+        public void BuildNodeRefs()
         {
-            //Build Lookup table
-            foreach (var node in _jsonNodes)
+            //Add this modules pins to the bit to reference lookup table
+            foreach (var connection in Connections)
+            {
+                if (connection.DirectionType == DirectionType.Output)
+                {
+                    JsonPinConnection con = (JsonPinConnection)connection;
+                    _lookup.Add(con.Bit, con);
+                }
+            }
+
+            //Add all cell output nodes to the reference lookup table
+            foreach (var node in Nodes)
             {
                 foreach (var connection in node.Connections)
                 {
-                    if (connection.DirectionType == DirectionType.Output || connection.Parent == this)
+                    if (connection.DirectionType == DirectionType.Output)
                     {
                         JsonPinConnection con = (JsonPinConnection)connection;
                         _lookup.Add(con.Bit, con);
@@ -188,20 +227,33 @@ namespace JsonToCupl
                 }
             }
 
-            //Build nodel input references for input and output
-            foreach (var node in _jsonNodes)
+            //Build references for cell input and outputs
+            foreach (var node in Nodes)
             {
                 foreach (var connection in node.Connections)
                 {
-                    if (connection.DirectionType == DirectionType.Input && connection.Parent != this)
+                    if ((connection.DirectionType == DirectionType.Input || connection.DirectionType == DirectionType.Inout))
                     {
-                        JsonPinConnection con = (JsonPinConnection)connection;
-                        var r = _lookup[con.Bit];
-                        connection.Refs.Add(r);
-                        r.Refs.Add(r);
+                        LinkConnection(connection);
                     }
                 }
             }
+
+            foreach (var connection in Connections)
+            {
+                if ((connection.DirectionType == DirectionType.Input || connection.DirectionType == DirectionType.Inout))
+                {
+                    LinkConnection(connection);
+                }
+            }
+        }
+
+        private void LinkConnection(PinConnection connection)
+        {
+            JsonPinConnection con = (JsonPinConnection)connection;
+            var r = _lookup[con.Bit];
+            connection.Refs.Add(r);
+            r.Refs.Add(r);
         }
 
         public void Build(JToken tok)
@@ -248,7 +300,22 @@ namespace JsonToCupl
                     {
                         case "direction":
                             var sval = (string)prop.Value;
-                            direction = (DirectionType)Enum.Parse(typeof(DirectionType), sval, true);
+                            direction = DirectionType.Unknown;
+                            Enum.TryParse(sval, true, out direction);
+                            //From the perspective of the inner cells, a input pin is actually an output pin and vice versa
+                            switch (direction)
+                            {
+                                case DirectionType.Input:
+                                    direction = DirectionType.Output;
+                                    break;
+                                case DirectionType.Output:
+                                    direction = DirectionType.Input;
+                                    break;
+                                case DirectionType.Inout:
+                                    break; //Nothing for this yet
+                                default:
+                                    throw new JTCParseExeption("Unsupported port direction value", oport.Value);
+                            }
                             break;
                         case "bits":
                             bits = prop.Value.CastJson<JArray>().Select(x => (int)x).ToArray();
@@ -268,63 +335,76 @@ namespace JsonToCupl
 
         void BuildCells(JToken value)
         {
-            JObject jo = value.CastJson<JObject>();
-            foreach (var ocell in jo)
+            int negBitCounter = -1;
+            foreach (var ocell in value.CastJson<JObject>())
             {
-                string name = ocell.Key;
-                var props = GetCellProps(ocell.Value.CastJson<JObject>());
+                JsonNode jn = ConstructCell(ocell);
 
+                foreach (var connection in jn.Connections)
+                {
+                    var jcon = (JsonPinConnection)connection;
+                    //Fix missing direction on DFF
+                    if (jn.Type == NodeType.DFF)
+                    {
+                        switch (connection.Name)
+                        {
+                            case "C":
+                            case "CLR":
+                            case "D":
+                            case "PRE":
+                                jcon.DirectionType = DirectionType.Input;
+                                break;
+                            case "Q":
+                                jcon.DirectionType = DirectionType.Output;
+                                break;
+                            default:
+                                throw new JTCParseExeption($"Unknown pin name {connection.Name}", ocell.Value);
+                        }
+                    }
+                    //Check if this is a constant value (bit = 0).  Create a placeholder node for the constant
+                    //Negative bit value used 
+                    if (jcon.Bit == 0)
+                    {
+                        if (jcon.DirectionType != DirectionType.Input)
+                            throw new JTCParseExeption($"Constant value connected to non input pin", ocell.Value);
+
+                        JsonNode constNode = new JsonNode(Util.GenerateName(), NodeType.Constant, jcon.Constant);
+                        constNode.Connections.Add(new JsonPinConnection(constNode, "OUT", DirectionType.Output, negBitCounter));
+                        jcon.Bit = negBitCounter;
+                        negBitCounter--;
+                        Nodes.Add(constNode);
+                    }
+                }
+                Nodes.Add(jn);
             }
         }
 
-        enum ConnectionType
+        static JsonNode ConstructCell(KeyValuePair<string, JToken> ocell)
         {
-            Unknown,
-            Vert,
-            Constant
-        }
-
-        sealed class CellPortProp
-        {
-            public DirectionType DirectionType { get; set; }
-            public int BitOrConst { get; set; }
-            public ConnectionType ConnectionType { get; set; }
-            public string Name { get; set; }
-        }
-
-        sealed class CellProp
-        {
-            readonly public string Type;
-            readonly public CellPortProp[] Ports;
-
-            public CellProp(string type, CellPortProp[] ports)
-            {
-                this.Type = type;
-                this.Ports = ports;
-            }
-        }
-
-        CellProp GetCellProps(JObject jo)
-        {
-            string type = null;
-            var map = new Dictionary<string, CellPortProp>();
-            foreach (var prop in jo)
+            JsonNode ret = null;
+            string name = ocell.Key;
+            NodeType type = NodeType.Unknown;
+            var map = new Dictionary<string, JsonPinConnection>();
+            foreach (var prop in ocell.Value.CastJson<JObject>())
             {
                 switch (prop.Key)
                 {
                     case "type":
                         object o = prop.Value.CastJson<JValue>().Value;
-                        type = o as string;
-                        if(type == null)
-                            throw new JTCParseExeption($"Unknown type literal value '{ o ?? ""}'", jo);
+                        string sType = o as string;
+                        if (sType == null || !TypeHelper.TryGetType(sType, out type))
+                            throw new JTCParseExeption($"Unknown type literal value '{ o ?? ""}'", ocell.Value);
                         break;
                     case "port_directions":
                         var directions = GetCellPropKeyValue(prop.Value.CastJson<JObject>());
                         foreach (var dir in directions)
                         {
+                            string sval = null;
                             bool succeed = false;
                             DirectionType directionType = DirectionType.Unknown;
-                            string sval = dir.Value as string;
+                            var jval = dir.Value as JValue;
+                            if (jval != null)
+                                sval = jval.Value as string;
                             if (sval != null)
                             {
                                 if (Enum.TryParse(sval, true, out directionType))
@@ -332,7 +412,7 @@ namespace JsonToCupl
                             }
                             if (!succeed)
                             {
-                                throw new JTCParseExeption($"Unknown direction literal value '{dir.Value ?? ""}'", jo);
+                                throw new JTCParseExeption($"Unknown direction literal value '{dir.Value ?? ""}'", ocell.Value);
                             }
                             map.GetOrCreate(dir.Key).DirectionType = directionType;
                         }
@@ -341,28 +421,49 @@ namespace JsonToCupl
                         var connections = GetCellPropKeyValue(prop.Value.CastJson<JObject>());
                         foreach (var con in connections)
                         {
-                            int value = 0;
-                            ConnectionType ct = ConnectionType.Unknown;
-                            if (con.Value is int)
+                            bool isok = false;
+                            bool isconstant = false;
+                            var jarray = con.Value as JArray;
+                            int ival = 0;
+                            if (jarray != null && jarray.Count == 1)
                             {
-                                ct = ConnectionType.Vert;
-                                value = (int)con.Value;
+                                var firstElement = jarray.First();
+                                switch (firstElement.Type)
+                                {
+                                    case JTokenType.String:
+                                        if (int.TryParse(firstElement.ToObject<string>(), out ival))
+                                        {
+                                            isconstant = true;
+                                            isok = true;
+                                        }
+                                        break;
+                                    case JTokenType.Integer:
+                                        ival = firstElement.ToObject<int>();
+                                        isok = true;
+                                        break;
+                                }
                             }
-                            else if (con.Value is string)
-                            {
-                                if (int.TryParse((string)con.Value, out value))
-                                    ct = ConnectionType.Constant;
-                            }
-                            if (ct == ConnectionType.Unknown)
-                                throw new JTCParseExeption($"Unknown connection literal value '{con.Value ?? ""}", jo);
+                            if (!isok)
+                                throw new JTCParseExeption($"Unknown connection literal value '{con.Value ?? ""}", ocell.Value);
                             var cellprop = map.GetOrCreate(con.Key);
-                            cellprop.BitOrConst = value;
-                            cellprop.ConnectionType = ct;
+                            if (isconstant)
+                                cellprop.Constant = ival;
+                            else
+                                cellprop.Bit = ival;
                         }
                         break;
                 }
             }
-            return new CellProp(type, map.Values.ToArray());
+            ret = new JsonNode(name, type);
+            //hack, build the name of each connection based on the key value within the map
+            //hack, set the parent node value based on the returned node
+            foreach (var kv in map)
+            {
+                kv.Value.Parent = ret;
+                kv.Value.Name = kv.Key;
+            }
+            ret.Connections.AddRange(map.Values.ToArray());
+            return ret;
         }
 
         static IEnumerable<KeyValuePair<string, object>> GetCellPropKeyValue(JToken value)
@@ -375,6 +476,26 @@ namespace JsonToCupl
         }
     }
 
+    static class TypeHelper
+    {
+        static readonly ReadOnlyDictionary<string, NodeType> _map;
+        static TypeHelper()
+        {
+            Dictionary<string, NodeType> dic = new Dictionary<string, NodeType>();
+            dic.Add("$_AND_", NodeType.And);
+            dic.Add("$_OR_", NodeType.Or);
+            dic.Add("$_NOT_", NodeType.Not);
+            dic.Add("$_XOR_", NodeType.Xor);
+            dic.Add("$_TBUF_", NodeType.TBUF);
+            dic.Add("FDCP", NodeType.DFF);
+            _map = new ReadOnlyDictionary<string, NodeType>(dic);
+        }
+
+        public static bool TryGetType(string stype, out NodeType type)
+        {
+            return _map.TryGetValue(stype, out type);
+        }
+    }
 
     class JsonModules : IJsonObj, IEnumerable<JsonModule>
     {
@@ -388,6 +509,7 @@ namespace JsonToCupl
             {
                 var module = new JsonModule(cld.Key);
                 module.Build(cld.Value);
+                module.BuildNodeRefs();
                 _modules.Add(module);
             }
         }
