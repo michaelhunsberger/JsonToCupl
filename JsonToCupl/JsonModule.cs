@@ -12,6 +12,7 @@ namespace JsonToCupl
     class JsonModule : ContainerNode, IJsonObj
     {
         readonly Dictionary<int, JsonPinConnection> _lookup = new Dictionary<int, JsonPinConnection>();
+        readonly Dictionary<int, Node> _regs = new Dictionary<int, Node>();
         static readonly int[] emptyBits = new int[0];
         public JsonModule(string name) : base(name, NodeType.Module)
         {
@@ -85,6 +86,37 @@ namespace JsonToCupl
                     case "cells":
                         BuildCells(node.Value);
                         break;
+                    case "netnames":
+                        BuildNetNames(node.Value);
+                        break;
+                }
+            }
+        }
+
+        void BuildNetNames(JToken value)
+        {
+            foreach (var netname in value.CastJson<JObject>())
+            {
+                string name = netname.Key;
+                foreach(var prop in netname.Value.CastJson<JObject>())
+                {
+                    switch(prop.Key)
+                    {
+                        case "bits":
+                            var bits = prop.Value.CastJson<JArray>().Select(x => (int)x).ToArray();
+                            bool useArrayName = bits.Length > 1;
+                            for (int ix = 0; ix < bits.Length; ix++)
+                            {
+                                var nodename = useArrayName ? Util.GenerateName(name, ix) : name;
+                                //Check if this node is contained in the list of known registers
+                                Node foundReg;
+                                if(_regs.TryGetValue(bits[ix], out foundReg))
+                                {
+                                    foundReg.Name = nodename;
+                                }
+                            }
+                            break;
+                    }
                 }
             }
         }
@@ -142,8 +174,8 @@ namespace JsonToCupl
                 bool useArrayName = bits.Length > 1;
                 for (int ix = 0; ix < bits.Length; ix++)
                 {
-                    name = useArrayName ? Util.GenerateName(name, ix) : name;
-                    JsonPinConnection pc = new JsonPinConnection(this, name, direction, bits[ix]);
+                    var nodename = useArrayName ? Util.GenerateName(name, ix) : name;
+                    JsonPinConnection pc = new JsonPinConnection(this, nodename, direction, bits[ix]);
                     this.Connections.Add(pc);
                 }
             }
@@ -172,6 +204,9 @@ namespace JsonToCupl
                                 break;
                             case "Q":
                                 jcon.DirectionType = DirectionType.Output;
+
+                                //Add register to list of registers
+                                _regs.Add(jcon.Bit, node);
                                 break;
                             default:
                                 throw new JTCParseExeption($"Unknown pin name {connection.Name}", ocell.Value);

@@ -4,7 +4,8 @@
     {
         public static string GenerateName()
         {
-            return string.Concat("JTCN", cnt++);
+            var ret = string.Concat("JTCN", cnt++);
+            return ret;
         }
         public static string GenerateName(string baseName, int ix)
         {

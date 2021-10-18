@@ -26,7 +26,8 @@ namespace JsonToCupl
 
         public PinConnection()
         {
-
         }
+        
+        public bool IsInput { get { return DirectionType == DirectionType.Input || DirectionType == DirectionType.Inout; } }
     }
 }
