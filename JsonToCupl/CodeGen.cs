@@ -41,7 +41,7 @@ internal class CodeGen
                 }
             }
         }
-        //   ColapseNodes(_mod, ctx);
+        CollapseNodes(_mod, ctx);
         GenerateExpressions(_mod, ctx);
         foreach (var cell in _mod.Cells)
         {
@@ -50,44 +50,42 @@ internal class CodeGen
         }
     }
 
-    void ColapseNodes(ContainerNode module, CodeGenCtx ctx)
+    void CollapseNodes(ContainerNode module, CodeGenCtx ctx)
     {
-        while (true)
+        var listToRemove = new List<PinConnection>();
+        do
         {
-            bool nochange = true;
-            var listToRemove = new List<PinConnection>();
-            foreach (var con in module.Connections)
+            listToRemove.Clear();
+            // A => B => C = A => C
+            foreach (var a_input in module.Connections.FindAll(x => x.IsInput))
             {
-                if (con.Refs.Count > 0)
+                if (a_input.Refs.Count == 0)
+                    continue;
+
+                var b_output = a_input.Refs[0];
+                var b = b_output.Parent;
+                if (b.Type == NodeType.PinNode && b_output.Refs.Count == 1)
                 {
-                    //if(con.Parent.Type == NodeType.Module && con.IsInput)
-                    //{
-                    //If the connected output PinConnection only has one reference, then its only used
-                    //as an intermediary for module's input pin
-                    //Replace the modules inputs with the pinnodes referenced inputs
-                    var connectedOutputRef = con.Refs[0];
-                    var outputNode = connectedOutputRef.Parent;
-                    if (outputNode.Type == NodeType.PinNode && connectedOutputRef.Refs.Count == 1)
-                    {
-                        var pinnodeInput = outputNode.Connections.Find(c => c.IsInput);
-                        if (pinnodeInput != null && pinnodeInput.Refs.Count > 0)
-                        {
-                            var outputRefToPinNode = pinnodeInput.Refs[0];
-                            outputRefToPinNode.Refs.Remove(pinnodeInput);
-                            outputRefToPinNode.Refs.Add(con);
-                            con.Refs.Add(outputRefToPinNode);
-                        }
-                        outputNode.Connections.Clear();
-                        nochange = false;
-                        con.Refs.Remove(connectedOutputRef);
-                    }
-                    //}
+                    var b_input = b.Connections.Find(x => x.DirectionType == DirectionType.Input);
+                    var c_output = b_input.Refs[0];
+
+                    //connect input a to output c
+                    a_input.Refs.Clear();
+                    a_input.Refs.Add(c_output);
+                    c_output.Refs.Clear();
+                    c_output.Refs.Add(a_input);
+                    b_input.Refs.Clear();
+                    b_output.Refs.Clear();
+                    listToRemove.Add(b_input);
                 }
             }
-            if (nochange)
-                break;
-        }
+            foreach (var removeMe in listToRemove)
+            {
+                module.Connections.Remove(removeMe);
+            }
+        } while (listToRemove.Count > 0);
     }
+
     void GenerateExpressions(ContainerNode module, CodeGenCtx ctx)
     {
         _visited.Clear();
@@ -145,7 +143,7 @@ internal class CodeGen
         }
         _visited.Add(parentNode);
         if (skip)
-            return;
+            return; //Skip processing this connection
         if (parentNode.Type == NodeType.Not)
         {
             Console.Write("! ( ");
