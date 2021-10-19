@@ -41,7 +41,7 @@ internal class CodeGen
                 }
             }
         }
-        CollapseNodes(_mod, ctx);
+        Symplify(_mod, ctx);
         GenerateExpressions(_mod, ctx);
         foreach (var cell in _mod.Cells)
         {
@@ -50,33 +50,54 @@ internal class CodeGen
         }
     }
 
-    void CollapseNodes(ContainerNode module, CodeGenCtx ctx)
+    void Symplify(ContainerNode module, CodeGenCtx ctx)
     {
         var listToRemove = new List<PinConnection>();
         do
         {
             listToRemove.Clear();
-            // A => B => C = A => C
             foreach (var a_input in module.Connections.FindAll(x => x.IsInput))
             {
                 if (a_input.Refs.Count == 0)
                     continue;
 
+                var a = a_input.Parent;
                 var b_output = a_input.Refs[0];
                 var b = b_output.Parent;
-                if (b.Type == NodeType.PinNode && b_output.Refs.Count == 1)
+                
+                // A => PINNODE(B) => PINNODE(C) : A => PINNODE(C)
+                if (b.Type == NodeType.PinNode)
                 {
-                    var b_input = b.Connections.Find(x => x.DirectionType == DirectionType.Input);
-                    var c_output = b_input.Refs[0];
+                    if (b_output.Refs.Count == 1)
+                    {
+                        var b_input = b.Connections.Find(x => x.DirectionType == DirectionType.Input);
+                        var c_output = b_input.Refs[0];
 
-                    //connect input a to output c
+                        //connect input a to output c
+                        a_input.Refs.Clear();
+                        a_input.Refs.Add(c_output);
+                        c_output.Refs.Clear();
+                        c_output.Refs.Add(a_input);
+                        b_input.Refs.Clear();
+                        b_output.Refs.Clear();
+                        listToRemove.Add(b_input);
+                    }
+                }
+                // PINNODE(A) => MODULE(B)
+                else if (a.Type == NodeType.PinNode && b.Type == NodeType.Module)
+                {
+                    b_output.Refs.Remove(a_input);
+                    var a_output = a.Connections.Find(x => x.DirectionType == DirectionType.Output);
+                    
+                    foreach (var c_input in a_output.Refs)
+                    {
+                        c_input.Refs.Remove(a_output);
+                        c_input.Refs.Add(b_output);
+                        b_output.Refs.Add(c_input);
+                    }
+                    a_output.Refs.Clear();
                     a_input.Refs.Clear();
-                    a_input.Refs.Add(c_output);
-                    c_output.Refs.Clear();
-                    c_output.Refs.Add(a_input);
-                    b_input.Refs.Clear();
-                    b_output.Refs.Clear();
-                    listToRemove.Add(b_input);
+                    listToRemove.Add(a_input);
                 }
             }
             foreach (var removeMe in listToRemove)
@@ -113,35 +134,27 @@ internal class CodeGen
         }
     }
 
-    void GenerateComboLogic(PinConnection outputNode, CodeGenCtx ctx)
+
+    void GenerateComboLogic(PinConnection outputConnection, CodeGenCtx ctx)
     {
-        bool skip = false;
-        Node parentNode = outputNode.Parent;
+        bool skip = BeginWalkOutputConnection(outputConnection);
+        Node parentNode = outputConnection.Parent;
         switch (parentNode.Type)
         {
             case NodeType.DFF:
             case NodeType.TBUF:
-                Console.Write(parentNode.Name + "." + outputNode.Name);
-                skip = true;
+                Console.Write(parentNode.Name + "." + outputConnection.Name);
                 break;
             case NodeType.PinNode:
                 Console.Write(parentNode.Name);
-                skip = true;
                 break;
             case NodeType.Module:
-                Console.Write(outputNode.Name);
-                skip = true;
+                Console.Write(outputConnection.Name);
                 break;
             case NodeType.Constant:
                 Console.Write(parentNode.Constant);
-                skip = true;
                 break;
         }
-        if (_visited.Contains(parentNode))
-        {
-            skip = true;
-        }
-        _visited.Add(parentNode);
         if (skip)
             return; //Skip processing this connection
         if (parentNode.Type == NodeType.Not)
@@ -187,6 +200,37 @@ internal class CodeGen
             }
         }
         Console.Write(" )");
+    }
+
+    bool BeginWalkOutputConnection(PinConnection outputNode)
+    {
+        bool skip = false;
+        if (outputNode.DirectionType != DirectionType.Output && outputNode.DirectionType != DirectionType.Inout)
+            throw new ApplicationException($"Invalid connection processing point, node not an output {outputNode.Name} ");
+        var parentNode = outputNode.Parent;
+        switch (parentNode.Type)
+        {
+            case NodeType.DFF:
+            case NodeType.TBUF:
+                skip = true;
+                break;
+            case NodeType.PinNode:
+                skip = true;
+                break;
+            case NodeType.Module:
+                skip = true;
+                break;
+            case NodeType.Constant:
+                skip = true;
+                break;
+        }
+
+        if (_visited.Contains(parentNode))
+        {
+            skip = true;
+        }
+        _visited.Add(parentNode);
+        return skip;
     }
 
     void PrepareSyncronousNodes(ContainerNode module, CodeGenCtx ctx)
