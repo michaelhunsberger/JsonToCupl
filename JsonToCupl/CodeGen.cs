@@ -75,13 +75,16 @@ namespace JsonToCupl
                 Node topNode = con.Parent;
                 if (con.InputOrBidirectional && (topNode.Type == NodeType.Pin || topNode.Type == NodeType.PinNode))
                 {
-                    _visited.Clear();
-                    _visited.Add(topNode);
-                    _collapseNodes.Clear();
-                    _collapseNodeState = CollapseNodeState.Start;
-                    PinConnection outConnection = con.Refs[0];
-                    CollapseNodes(outConnection.Parent);
-                    ProcessCollapseNodes(topNode);
+                    if (con.Refs.Count == 1)
+                    {
+                        _visited.Clear();
+                        _visited.Add(topNode);
+                        _collapseNodes.Clear();
+                        _collapseNodeState = CollapseNodeState.Start;
+                        PinConnection outConnection = con.Refs[0];
+                        CollapseNodes(outConnection.Parent);
+                        ProcessCollapseNodes(topNode);
+                    }
                 }
             }
         }
@@ -99,23 +102,39 @@ namespace JsonToCupl
                 topNode.Connections.Add(topNodeOutput);
             }
 
-            //List of all inputs of syncronous nodes to into the topNode
+            //List of all inputs of syncronous nodes to move into the topNode
             var inputsToMove = new List<PinConnection>();
-            //Found DFF Q value, used 
-            Node foundQ = null;
+            //Found DFF node
+            Node foundQNode = null;
+            //Fond output to DFF node 
+            PinConnection foundQNodeOutput = null;
+
+            //Fill the inputsToMove list
             foreach (Node node2 in _collapseNodes)
             {
                 //only consider DFF and TBUF
                 if (node2.Type == NodeType.DFF || node2.Type == NodeType.TBUF)
                 {
                     if (node2.Type == NodeType.DFF)
-                        foundQ = node2;
-
+                    {
+                        if (foundQNode != null)
+                            throw new ApplicationException("More than one registered output nodes found in collapse list");
+                        foundQNode = node2;
+                    }
                     foreach (PinConnection con in node2.Connections)
                     {
                         if (con.DirectionType == DirectionType.Input)
                         {
                             inputsToMove.Add(con);
+                        }
+                        else if (con.DirectionType == DirectionType.Output)
+                        {
+                            if (node2.Type == NodeType.DFF && con.Name == "Q")
+                            {
+                                if (foundQNodeOutput != null)
+                                    throw new ApplicationException("More than one registered output node connections found in collapse list");
+                                foundQNodeOutput = con;
+                            }
                         }
                     }
                 }
@@ -134,9 +153,10 @@ namespace JsonToCupl
                 {
                     //Only consider nodes that have an input of DFF and is contained in the collapse list
                     bool consider = false;
+                    //input.Refs.FirstOrDefault(rf => rf.Parent == foundQNode) != null;
                     foreach (var rf in input.Refs)
                     {
-                        if (rf.Parent == foundQ)
+                        if (rf.Parent == foundQNode)
                         {
                             consider = true;
                             break;
@@ -151,7 +171,6 @@ namespace JsonToCupl
                     }
                 }
             }
-
 
             if (inputsToMove.Count > 0)
             {
@@ -176,19 +195,45 @@ namespace JsonToCupl
                 //Move input connections to the topNode
                 foreach (var mv in inputsToMove)
                 {
-                    //If the ref node is within the collapsed node list, we need to check the 
-                    //the node and connection type
-                    var parentRefNode = mv.Refs[0].Parent;
-                    if (_collapseNodes.Contains(parentRefNode))
+                    bool performMove = false;
+                    switch (mv.Parent.Type)
                     {
-                        if(mv.Parent.Type != NodeType.TBUF || mv.Name != "E")
-                        {
-                            //Only the enable pin on a TBUF can be moved in this case 
-                            continue;
-                        }
+                        case NodeType.DFF:
+                            performMove = true;
+                            break;
+                        case NodeType.TBUF:
+                            if (mv.Name == "E")
+                                performMove = true;
+                            else if (mv.Name == "A")
+                            {
+                                //We only include the 'A' connection if it does not reference the foundQNodeOutput
+                                //Walk though the pinnode chain and see if it references the foundQNodeOutput
+                                //Rescript nodes to ones contained in the collapse list
+                                performMove = true;
+                                for (PinConnection cur = mv;
+                                    _collapseNodes.Contains(cur.Parent);
+                                    cur = NextPinNodeInput(cur))
+                                {
+                                    if (cur.Refs.Contains(foundQNodeOutput))
+                                    {
+                                        performMove = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            break;
                     }
-                    mv.Parent = topNode;
-                    topNode.Connections.Add(mv);
+                    if (performMove)
+                    {
+                        mv.Parent.Connections.Remove(mv);
+                        mv.Parent = topNode;
+                        topNode.Connections.Add(mv);
+                    }
+                    else
+                    {
+                        //If we are not moving this input, clear its references
+                        mv.Refs.Clear();
+                    }
                 }
 
                 //For pinnodes that reference reference the DFF value, we need to make the topNode the output
@@ -199,13 +244,47 @@ namespace JsonToCupl
                     mv.Refs.Add(topNodeOutput);
                     topNodeOutput.Refs.Add(mv);
                 }
+
+                //For each connection that was not moved, clear its refereces   
                 foreach (var collapsed in _collapseNodes)
                 {
-                    collapsed.Connections.Clear();
+                    PinConnection output = collapsed.Connections.GetOutput();
+                    if (!IsReferencedInput(topNode, output))
+                    {
+                        foreach (var con in collapsed.Connections)
+                            con.Refs.Clear();
+                    }
                 }
             }
         }
 
+        bool IsReferencedInput(Node topNode, PinConnection con)
+        {
+            if (con.DirectionType == DirectionType.Output)
+            {
+                foreach (var input in topNode.Connections.GetInputs())
+                {
+                    if (input.Refs.Count == 1)
+                    {
+                        var inputRef = input.Refs[0];
+                        if (inputRef == con)
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return IsReferencedInput(inputRef.Parent, con);
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        PinConnection NextPinNodeInput(PinConnection con)
+        {
+            return con.Refs[0].Parent.Connections.GetInputs().First();
+        }
         private void CollapseNodes(Node node)
         {
             if (_visited.Contains(node))
