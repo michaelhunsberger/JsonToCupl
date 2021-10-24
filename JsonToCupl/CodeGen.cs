@@ -91,6 +91,7 @@ namespace JsonToCupl
             if (_collapseNodes.Count == 0)
                 return;
 
+            //Get the topMode's output connection, if it does not exist, create one
             PinConnection topNodeOutput = topNode.Connections.FirstOrDefault(c => c.InputOrBidirectional);
             if (topNodeOutput == null)
             {
@@ -98,10 +99,13 @@ namespace JsonToCupl
                 topNode.Connections.Add(topNodeOutput);
             }
 
+            //List of all inputs of syncronous nodes to into the topNode
             var inputsToMove = new List<PinConnection>();
+            //Found DFF Q value, used 
             Node foundQ = null;
             foreach (Node node2 in _collapseNodes)
             {
+                //only consider DFF and TBUF
                 if (node2.Type == NodeType.DFF || node2.Type == NodeType.TBUF)
                 {
                     if (node2.Type == NodeType.DFF)
@@ -120,7 +124,7 @@ namespace JsonToCupl
             //We need to consider outputs from pinnodes within the collapse list.
             //If they reference a collapsed DFF, all outputs to nodes not within the collapsed list will need be 
             //changed to the topNode
-            List<PinConnection> inputRefsToPinNodeOutput = new List<PinConnection>();
+            List<PinConnection> inputRefsToDFFQ = new List<PinConnection>();
             foreach (Node node in _collapseNodes.Where(c => c.Type == NodeType.PinNode))
             {
                 var output = node.Connections.FirstOrDefault(c => c.DirectionType == DirectionType.Output);
@@ -143,7 +147,7 @@ namespace JsonToCupl
                     {
                         //Exclude any connection that points to a node in the existing list
                         var outConToNotInCollapsedList = output.Refs.FindAll(c => c.Parent != topNode && !_collapseNodes.Contains(c.Parent));
-                        inputRefsToPinNodeOutput.AddRange(outConToNotInCollapsedList);
+                        inputRefsToDFFQ.AddRange(outConToNotInCollapsedList);
                     }
                 }
             }
@@ -151,6 +155,8 @@ namespace JsonToCupl
 
             if (inputsToMove.Count > 0)
             {
+                //Remove references from input node and references to this node
+                //for any output node that is contained in the collapse list
                 var inputToTopNode = topNode.Connections.First(c => c.InputOrBidirectional);
                 var inputRefsToRemove = new List<PinConnection>();
                 foreach (var refCon in inputToTopNode.Refs)
@@ -167,12 +173,27 @@ namespace JsonToCupl
                 foreach (var refCon in inputRefsToRemove)
                     inputToTopNode.Refs.Remove(refCon);
 
+                //Move input connections to the topNode
                 foreach (var mv in inputsToMove)
                 {
+                    //If the ref node is within the collapsed node list, we need to check the 
+                    //the node and connection type
+                    var parentRefNode = mv.Refs[0].Parent;
+                    if (_collapseNodes.Contains(parentRefNode))
+                    {
+                        if(mv.Parent.Type != NodeType.TBUF || mv.Name != "E")
+                        {
+                            //Only the enable pin on a TBUF can be moved in this case 
+                            continue;
+                        }
+                    }
                     mv.Parent = topNode;
                     topNode.Connections.Add(mv);
                 }
-                foreach (var mv in inputRefsToPinNodeOutput)
+
+                //For pinnodes that reference reference the DFF value, we need to make the topNode the output
+                //and remove references to the pinnode
+                foreach (var mv in inputRefsToDFFQ)
                 {
                     mv.Refs.Clear();
                     mv.Refs.Add(topNodeOutput);
