@@ -13,14 +13,15 @@ namespace JsonToCupl
         DFF,
         TBUF,
         Constant,
+        Pin,
         PinNode
     }
 
     class Node
     {
         readonly NodeType _type;
-        readonly List<PinConnection> _connections = new List<PinConnection>();
-        readonly List<PinConnection> _in = new List<PinConnection>();
+        readonly Connections _connections = new Connections();
+        readonly Connections _in = new Connections();
         readonly int _constant;
         public Node(string name, NodeType type, int constant = 0)
         {
@@ -30,7 +31,7 @@ namespace JsonToCupl
         }
 
         public string Name { get; set; }
-        public List<PinConnection> Connections => _connections;
+        public Connections Connections => _connections;
         public NodeType Type => _type;
         public int Constant => _constant;
 

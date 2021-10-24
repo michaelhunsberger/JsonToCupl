@@ -1,305 +1,474 @@
-﻿// JsonToCupl.CodeGen
-using JsonToCupl;
+﻿using JsonToCupl;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
-internal class CodeGen
+namespace JsonToCupl
 {
-    class Pinnode
+    class CodeGen
     {
-        public Node Node;
-
-        public string Name;
-    }
-
-    class CodeGenCtx
-    {
-        public List<Node> CreatedPinNodes = new List<Node>();
-    }
-
-    readonly ContainerNode _mod;
-
-    readonly HashSet<Node> _visited = new HashSet<Node>();
-
-    public CodeGen(ContainerNode mod)
-    {
-        _mod = mod;
-    }
-
-    public void Test()
-    {
-        CodeGenCtx ctx = new CodeGenCtx();
-        PrepareSyncronousNodes(_mod, ctx);
-        CreatePinNodes(_mod, ctx);
-        foreach (Node pinNode in ctx.CreatedPinNodes)
+        private enum CollapseNodeState
         {
-            foreach (PinConnection pinNodeCon in pinNode.Connections)
+            Start,
+            FoundTriBuf,
+            FoundRegister
+        }
+
+        private readonly ContainerNode _mod;
+
+        private readonly HashSet<Node> _visited = new HashSet<Node>();
+
+        private readonly List<Node> _createdPinNodes = new List<Node>();
+
+        private readonly List<Node> _createdPins = new List<Node>();
+
+        private readonly List<Node> _collapseNodes = new List<Node>();
+
+        private CollapseNodeState _collapseNodeState = CollapseNodeState.Start;
+
+        public CodeGen(ContainerNode mod)
+        {
+            _mod = mod;
+        }
+
+        public void Test()
+        {
+            foreach (PinConnection connection in _mod.Connections)
             {
-                if (pinNodeCon.DirectionType == DirectionType.Input)
+                if (connection.Parent.Type == NodeType.Module)
                 {
-                    _mod.Connections.Add(pinNodeCon);
+                    Node pin = connection.Parent = new Node(connection.Name, NodeType.Pin);
+                    pin.Connections.Add(connection);
+                    _createdPins.Add(pin);
                 }
             }
-        }
-        Symplify(_mod, ctx);
-        GenerateExpressions(_mod, ctx);
-        foreach (var cell in _mod.Cells)
-        {
-            if (!_visited.Contains(cell))
-                throw new ApplicationException($"Unvisited cell {cell.Name}");
-        }
-    }
-
-    void Symplify(ContainerNode module, CodeGenCtx ctx)
-    {
-        var listToRemove = new List<PinConnection>();
-        do
-        {
-            listToRemove.Clear();
-            foreach (var a_input in module.Connections.FindAll(x => x.IsInput))
+            PrepareSyncronousNodes();
+            CreatePinNodes(_mod);
+            foreach (Node pinNode in _createdPinNodes)
             {
-                if (a_input.Refs.Count == 0)
-                    continue;
-
-                var a = a_input.Parent;
-                var b_output = a_input.Refs[0];
-                var b = b_output.Parent;
-                
-                // A => PINNODE(B) => PINNODE(C) : A => PINNODE(C)
-                if (b.Type == NodeType.PinNode)
+                foreach (PinConnection pinNodeCon in pinNode.Connections)
                 {
-                    if (b_output.Refs.Count == 1)
+                    if (pinNodeCon.DirectionType == DirectionType.Input)
                     {
-                        var b_input = b.Connections.Find(x => x.DirectionType == DirectionType.Input);
-                        var c_output = b_input.Refs[0];
-
-                        //connect input a to output c
-                        a_input.Refs.Clear();
-                        a_input.Refs.Add(c_output);
-                        c_output.Refs.Clear();
-                        c_output.Refs.Add(a_input);
-                        b_input.Refs.Clear();
-                        b_output.Refs.Clear();
-                        listToRemove.Add(b_input);
+                        _mod.Connections.Add(pinNodeCon);
                     }
                 }
-                // PINNODE(A) => MODULE(B)
-                else if (a.Type == NodeType.PinNode && b.Type == NodeType.Module)
+            }
+            Symplify();
+            CollapseNodes();
+            GenerateExpressions();
+            /*
+            foreach (Node cell in _mod.Cells)
+            {
+                if (!_visited.Contains(cell))
                 {
-                    b_output.Refs.Remove(a_input);
-                    var a_output = a.Connections.Find(x => x.DirectionType == DirectionType.Output);
-                    
-                    foreach (var c_input in a_output.Refs)
-                    {
-                        c_input.Refs.Remove(a_output);
-                        c_input.Refs.Add(b_output);
-                        b_output.Refs.Add(c_input);
-                    }
-                    a_output.Refs.Clear();
-                    a_input.Refs.Clear();
-                    listToRemove.Add(a_input);
+                    throw new ApplicationException("Unvisited cell " + cell.Name);
                 }
             }
-            foreach (var removeMe in listToRemove)
+            */
+        }
+
+        private void CollapseNodes()
+        {
+            foreach (PinConnection con in _mod.Connections)
             {
-                module.Connections.Remove(removeMe);
-            }
-        } while (listToRemove.Count > 0);
-    }
-
-    void GenerateExpressions(ContainerNode module, CodeGenCtx ctx)
-    {
-        _visited.Clear();
-        foreach (var con in module.Connections)
-        {
-            if (con.IsInput)
-            {
-                //  _visited.Clear();
-                var refs = con.Refs;
-                if (refs.Count == 0)
-                    continue; //should not happen
-                if (refs.Count != 1)
-                    throw new ApplicationException($"Invalid input reference count at {con.Name}");
-
-                string name = con.Name;
-                if (con.Parent.Type == NodeType.PinNode)
-                    name = con.Parent.Name;
-                else if (con.Parent.Type != NodeType.Module)
-                    name = con.Parent.Name + "." + con.Name;
-                _visited.Add(con.Parent);
-                Console.Write(name + " = ");
-                GenerateComboLogic(refs[0], ctx);
-                Console.WriteLine(";");
-            }
-        }
-    }
-
-
-    void GenerateComboLogic(PinConnection outputConnection, CodeGenCtx ctx)
-    {
-        bool skip = BeginWalkOutputConnection(outputConnection);
-        Node parentNode = outputConnection.Parent;
-        switch (parentNode.Type)
-        {
-            case NodeType.DFF:
-            case NodeType.TBUF:
-                Console.Write(parentNode.Name + "." + outputConnection.Name);
-                break;
-            case NodeType.PinNode:
-                Console.Write(parentNode.Name);
-                break;
-            case NodeType.Module:
-                Console.Write(outputConnection.Name);
-                break;
-            case NodeType.Constant:
-                Console.Write(parentNode.Constant);
-                break;
-        }
-        if (skip)
-            return; //Skip processing this connection
-        if (parentNode.Type == NodeType.Not)
-        {
-            Console.Write("! ( ");
-        }
-        else
-        {
-            Console.Write(" ( ");
-        }
-        bool didWriteOperator = false;
-        foreach (var con in parentNode.Connections)
-        {
-            if (con.IsInput)
-            {
-                var refs = con.Refs;
-                if (refs.Count == 0)
-                    continue; //should not happen
-                if (refs.Count != 1)
-                    throw new ApplicationException($"Invalid input reference count at {con.Name}");
-
-                GenerateComboLogic(con.Refs[0], ctx);
-                if (!didWriteOperator)
+                Node topNode = con.Parent;
+                if (con.InputOrBidirectional && (topNode.Type == NodeType.Pin || topNode.Type == NodeType.PinNode))
                 {
-                    switch (parentNode.Type)
+                    _visited.Clear();
+                    _visited.Add(topNode);
+                    _collapseNodes.Clear();
+                    _collapseNodeState = CollapseNodeState.Start;
+                    PinConnection outConnection = con.Refs[0];
+                    CollapseNodes(outConnection.Parent);
+                    ProcessCollapseNodes(topNode);
+                }
+            }
+        }
+
+        private void ProcessCollapseNodes(Node topNode)
+        {
+            if (_collapseNodes.Count == 0)
+                return;
+
+            PinConnection topNodeOutput = topNode.Connections.FirstOrDefault(c => c.InputOrBidirectional);
+            if (topNodeOutput == null)
+            {
+                topNodeOutput = new PinConnection(topNode, "_OUT", DirectionType.Output);
+                topNode.Connections.Add(topNodeOutput);
+            }
+
+            var inputsToMove = new List<PinConnection>();
+            Node foundQ = null;
+            foreach (Node node2 in _collapseNodes)
+            {
+                if (node2.Type == NodeType.DFF || node2.Type == NodeType.TBUF)
+                {
+                    if (node2.Type == NodeType.DFF)
+                        foundQ = node2;
+
+                    foreach (PinConnection con in node2.Connections)
                     {
-                        case NodeType.And:
-                            Console.Write(" & ");
+                        if (con.DirectionType == DirectionType.Input)
+                        {
+                            inputsToMove.Add(con);
+                        }
+                    }
+                }
+            }
+
+            //We need to consider outputs from pinnodes within the collapse list.
+            //If they reference a collapsed DFF, all outputs to nodes not within the collapsed list will need be 
+            //changed to the topNode
+            List<PinConnection> inputRefsToPinNodeOutput = new List<PinConnection>();
+            foreach (Node node in _collapseNodes.Where(c => c.Type == NodeType.PinNode))
+            {
+                var output = node.Connections.FirstOrDefault(c => c.DirectionType == DirectionType.Output);
+                var input = node.Connections.FirstOrDefault(c => c.DirectionType == DirectionType.Input);
+
+                if (output != null)
+                {
+                    //Only consider nodes that have an input of DFF and is contained in the collapse list
+                    bool consider = false;
+                    foreach (var rf in input.Refs)
+                    {
+                        if (rf.Parent == foundQ)
+                        {
+                            consider = true;
                             break;
-                        case NodeType.Or:
-                            Console.Write(" | ");
-                            break;
-                        case NodeType.Xor:
-                            Console.Write(" # ");
-                            break;
-                        case NodeType.Not:
-                            break; //Not a binary operator
-                        default:
-                            throw new ApplicationException($"Unknown combinational operator type '{parentNode.Type}'");
+                        }
                     }
-                    didWriteOperator = true;
-                }
-            }
-        }
-        Console.Write(" )");
-    }
-
-    bool BeginWalkOutputConnection(PinConnection outputNode)
-    {
-        bool skip = false;
-        if (outputNode.DirectionType != DirectionType.Output && outputNode.DirectionType != DirectionType.Inout)
-            throw new ApplicationException($"Invalid connection processing point, node not an output {outputNode.Name} ");
-        var parentNode = outputNode.Parent;
-        switch (parentNode.Type)
-        {
-            case NodeType.DFF:
-            case NodeType.TBUF:
-                skip = true;
-                break;
-            case NodeType.PinNode:
-                skip = true;
-                break;
-            case NodeType.Module:
-                skip = true;
-                break;
-            case NodeType.Constant:
-                skip = true;
-                break;
-        }
-
-        if (_visited.Contains(parentNode))
-        {
-            skip = true;
-        }
-        _visited.Add(parentNode);
-        return skip;
-    }
-
-    void PrepareSyncronousNodes(ContainerNode module, CodeGenCtx ctx)
-    {
-        foreach (var node in module.Cells)
-        {
-            if (node.Type == NodeType.DFF || node.Type == NodeType.TBUF)
-            {
-                foreach (var connection in node.Connections)
-                {
-                    if (connection.DirectionType == DirectionType.Input)
+                    //Save output connections only if the output references a pending collapsed syncronous node 
+                    if (consider)
                     {
-                        module.Connections.Add(connection);
+                        //Exclude any connection that points to a node in the existing list
+                        var outConToNotInCollapsedList = output.Refs.FindAll(c => c.Parent != topNode && !_collapseNodes.Contains(c.Parent));
+                        inputRefsToPinNodeOutput.AddRange(outConToNotInCollapsedList);
                     }
                 }
             }
-        }
-    }
 
-    void CreatePinNodes(Node node, CodeGenCtx ctx)
-    {
-        if (node.Type != NodeType.PinNode && !_visited.Contains(node))
+
+            if (inputsToMove.Count > 0)
+            {
+                var inputToTopNode = topNode.Connections.First(c => c.InputOrBidirectional);
+                var inputRefsToRemove = new List<PinConnection>();
+                foreach (var refCon in inputToTopNode.Refs)
+                {
+                    if (refCon.OutputOrBidirectional)
+                    {
+                        if (_collapseNodes.Contains(refCon.Parent))
+                        {
+                            inputRefsToRemove.Add(refCon);
+                            refCon.Refs.Remove(inputToTopNode);
+                        }
+                    }
+                }
+                foreach (var refCon in inputRefsToRemove)
+                    inputToTopNode.Refs.Remove(refCon);
+
+                foreach (var mv in inputsToMove)
+                {
+                    mv.Parent = topNode;
+                    topNode.Connections.Add(mv);
+                }
+                foreach (var mv in inputRefsToPinNodeOutput)
+                {
+                    mv.Refs.Clear();
+                    mv.Refs.Add(topNodeOutput);
+                    topNodeOutput.Refs.Add(mv);
+                }
+                foreach (var collapsed in _collapseNodes)
+                {
+                    collapsed.Connections.Clear();
+                }
+            }
+        }
+
+        private void CollapseNodes(Node node)
         {
+            if (_visited.Contains(node))
+            {
+                return;
+            }
             _visited.Add(node);
-            foreach (PinConnection connection in node.Connections)
+            bool walk = false;
+            switch (node.Type)
             {
-                if (connection.DirectionType == DirectionType.Input || connection.DirectionType == DirectionType.Inout)
-                {
-                    List<PinConnection> refs = connection.Refs;
-                    if (refs.Count != 0)
+                case NodeType.DFF:
+                    if (_collapseNodeState != CollapseNodeState.FoundRegister)
                     {
-                        if (refs.Count != 1)
+                        walk = true;
+                        _collapseNodeState = CollapseNodeState.FoundRegister;
+                    }
+                    break;
+                case NodeType.TBUF:
+                    if (_collapseNodeState == CollapseNodeState.Start)
+                    {
+                        walk = true;
+                        _collapseNodeState = CollapseNodeState.FoundTriBuf;
+                    }
+                    break;
+                case NodeType.PinNode:
+                    walk = true;
+                    break;
+            }
+            if (walk)
+            {
+                _collapseNodes.Add(node);
+                if (_collapseNodeState != CollapseNodeState.FoundRegister)
+                {
+                    foreach (PinConnection inputConnection in node.Connections.Where((PinConnection x) => x.DirectionType == DirectionType.Input))
+                    {
+                        foreach (PinConnection outConnection in inputConnection.Refs)
                         {
-                            throw new ApplicationException("Invalid number of connections to input node " + connection.Name);
+                            CollapseNodes(outConnection.Parent);
                         }
-                        PinConnection output = connection.Refs[0];
-                        if (output.DirectionType != DirectionType.Output && output.DirectionType != DirectionType.Inout)
-                        {
-                            throw new ApplicationException("Unknown connection to input node " + connection.Name);
-                        }
-                        Node parentOutputNode = output.Parent;
+                    }
+                }
+            }
+        }
 
-                        //If the output connection to the input has more than one reference, or not a combinational gate, then create a pinnode
-                        if (parentOutputNode.Type != NodeType.PinNode && (output.Refs.Count > 1 || !parentOutputNode.IsCombinational))
+        private void Symplify()
+        {
+            List<PinConnection> listToRemove = new List<PinConnection>();
+            do
+            {
+                listToRemove.Clear();
+                foreach (PinConnection a_input in _mod.Connections.Where((PinConnection x) => x.InputOrBidirectional))
+                {
+                    if (a_input.Refs.Count != 0)
+                    {
+                        Node a = a_input.Parent;
+                        PinConnection b_output = a_input.Refs[0];
+                        Node b = b_output.Parent;
+                        if (b.Type == NodeType.PinNode)
                         {
-                            string newName = Util.GenerateName();
-                            Node pinNode = new Node(newName, NodeType.PinNode);
-                            PinConnection outputForPinNode = new PinConnection(pinNode, Util.GenerateName(), DirectionType.Output);
-                            PinConnection inputForPinNode = new PinConnection(pinNode, Util.GenerateName(), DirectionType.Input);
-                            pinNode.Connections.Add(outputForPinNode);
-                            pinNode.Connections.Add(inputForPinNode);
-                            foreach (PinConnection inputNodeThatRefsOutput in output.Refs)
+                            if (b_output.Refs.Count == 1)
                             {
-                                if (inputNodeThatRefsOutput.Refs.Count > 1 || (inputNodeThatRefsOutput.DirectionType != DirectionType.Input && inputNodeThatRefsOutput.DirectionType != DirectionType.Inout))
-                                {
-                                    throw new ApplicationException("Output node references non input node");
-                                }
-                                inputNodeThatRefsOutput.Refs.Clear();
-                                inputNodeThatRefsOutput.Refs.Add(outputForPinNode);
-                                outputForPinNode.Refs.Add(inputNodeThatRefsOutput);
+                                PinConnection b_input = b.Connections.Find(x => x.DirectionType == DirectionType.Input);
+                                PinConnection c_output = b_input.Refs[0];
+                                a_input.Refs.Clear();
+                                a_input.Refs.Add(c_output);
+                                c_output.Refs.Clear();
+                                c_output.Refs.Add(a_input);
+                                b_input.Refs.Clear();
+                                b_output.Refs.Clear();
+                                listToRemove.Add(b_input);
                             }
-                            output.Refs.Clear();
-                            output.Refs.Add(inputForPinNode);
-                            inputForPinNode.Refs.Add(output);
-                            ctx.CreatedPinNodes.Add(pinNode);
                         }
-                        //only walk though this node if its a cominational node
-                        if (parentOutputNode.IsCombinational)
-                            CreatePinNodes(parentOutputNode, ctx);
+                        else if (a.Type == NodeType.PinNode && b.Type == NodeType.Pin)
+                        {
+                            b_output.Refs.Remove(a_input);
+                            PinConnection a_output = a.Connections.Find((PinConnection x) => x.DirectionType == DirectionType.Output);
+                            foreach (PinConnection c_input in a_output.Refs)
+                            {
+                                c_input.Refs.Remove(a_output);
+                                c_input.Refs.Add(b_output);
+                                b_output.Refs.Add(c_input);
+                            }
+                            a_output.Refs.Clear();
+                            a_input.Refs.Clear();
+                            listToRemove.Add(a_input);
+                        }
+                    }
+                }
+                foreach (PinConnection removeMe in listToRemove)
+                {
+                    _mod.Connections.Remove(removeMe);
+                }
+            }
+            while (listToRemove.Count > 0);
+        }
+
+        private void GenerateExpressions()
+        {
+            _visited.Clear();
+            foreach (PinConnection con in _mod.Connections)
+            {
+                if (con.InputOrBidirectional)
+                {
+                    PinConnection refToInput = con.Refs.FirstOrDefault(r => r.DirectionType == DirectionType.Output);
+                    if (refToInput != null)
+                    {
+                        string name = con.Name;
+                        if (con.Parent.Type == NodeType.PinNode || con.Parent.Type == NodeType.Pin)
+                        {
+                            name = ((!(con.Name == "_PIN_OUT") && !(con.Name == "_PIN_IN") && !(con.Name == con.Parent.Name)) ? (con.Parent.Name + "." + con.Name) : con.Parent.Name);
+                        }
+                        else if (con.Parent.Type != NodeType.Module)
+                        {
+                            name = con.Parent.Name + "." + con.Name;
+                        }
+                        _visited.Add(con.Parent);
+                        Console.Write(name + " = ");
+                        GenerateComboLogic(refToInput);
+                        Console.WriteLine(";");
+                    }
+                }
+            }
+        }
+
+        private void GenerateComboLogic(PinConnection outputConnection)
+        {
+            bool skip = BeginWalkOutputConnection(outputConnection);
+            Node parentNode = outputConnection.Parent;
+            switch (parentNode.Type)
+            {
+                case NodeType.DFF:
+                case NodeType.TBUF:
+                    Console.Write(parentNode.Name + "." + outputConnection.Name);
+                    break;
+                case NodeType.Pin:
+                case NodeType.PinNode:
+                    Console.Write(parentNode.Name);
+                    break;
+                case NodeType.Module:
+                    Console.Write(outputConnection.Name);
+                    break;
+                case NodeType.Constant:
+                    Console.Write(parentNode.Constant);
+                    break;
+            }
+            if (!skip)
+            {
+                if (parentNode.Type == NodeType.Not)
+                {
+                    Console.Write("! ( ");
+                }
+                else
+                {
+                    Console.Write(" ( ");
+                }
+                bool didWriteOperator = false;
+                foreach (PinConnection con in parentNode.Connections)
+                {
+                    if (con.InputOrBidirectional)
+                    {
+                        List<PinConnection> refs = con.Refs;
+                        if (refs.Count != 0)
+                        {
+                            if (refs.Count != 1)
+                            {
+                                throw new ApplicationException("Invalid input reference count at " + con.Name);
+                            }
+                            GenerateComboLogic(con.Refs[0]);
+                            if (!didWriteOperator)
+                            {
+                                switch (parentNode.Type)
+                                {
+                                    case NodeType.And:
+                                        Console.Write(" & ");
+                                        break;
+                                    case NodeType.Or:
+                                        Console.Write(" | ");
+                                        break;
+                                    case NodeType.Xor:
+                                        Console.Write(" # ");
+                                        break;
+                                    default:
+                                        throw new ApplicationException($"Unknown combinational operator type '{parentNode.Type}'");
+                                    case NodeType.Not:
+                                        break;
+                                }
+                                didWriteOperator = true;
+                            }
+                        }
+                    }
+                }
+                Console.Write(" )");
+            }
+        }
+
+        private bool BeginWalkOutputConnection(PinConnection outputNode)
+        {
+            bool skip = false;
+            if (outputNode.DirectionType != DirectionType.Output && outputNode.DirectionType != DirectionType.Bidirectional)
+            {
+                throw new ApplicationException("Invalid connection processing point, node not an output " + outputNode.Name + " ");
+            }
+            Node parentNode = outputNode.Parent;
+            NodeType type = parentNode.Type;
+            NodeType nodeType = type;
+            if (nodeType == NodeType.Module || (uint)(nodeType - 6) <= 4u)
+            {
+                skip = true;
+            }
+            if (_visited.Contains(parentNode))
+            {
+                skip = true;
+            }
+            _visited.Add(parentNode);
+            return skip;
+        }
+
+        private void PrepareSyncronousNodes()
+        {
+            foreach (Node node in _mod.Cells)
+            {
+                if (node.Type == NodeType.DFF || node.Type == NodeType.TBUF)
+                {
+                    foreach (PinConnection connection in node.Connections)
+                    {
+                        if (connection.DirectionType == DirectionType.Input)
+                        {
+                            _mod.Connections.Add(connection);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CreatePinNodes(Node node)
+        {
+            if (node.Type != NodeType.PinNode && !_visited.Contains(node))
+            {
+                _visited.Add(node);
+                foreach (PinConnection connection in node.Connections)
+                {
+                    if (connection.DirectionType == DirectionType.Input || connection.DirectionType == DirectionType.Bidirectional)
+                    {
+                        List<PinConnection> refs = connection.Refs;
+                        if (refs.Count != 0)
+                        {
+                            if (refs.Count != 1)
+                            {
+                                throw new ApplicationException("Invalid number of connections to input node " + connection.Name);
+                            }
+                            PinConnection output = connection.Refs[0];
+                            if (output.DirectionType != DirectionType.Output && output.DirectionType != DirectionType.Bidirectional)
+                            {
+                                throw new ApplicationException("Unknown connection to input node " + connection.Name);
+                            }
+                            Node parentOutputNode = output.Parent;
+                            if (parentOutputNode.Type != NodeType.PinNode && (output.Refs.Count > 1 || !parentOutputNode.IsCombinational))
+                            {
+                                string newName = Util.GenerateName();
+                                Node pinNode = new Node(newName, NodeType.PinNode);
+                                PinConnection outputForPinNode = new PinConnection(pinNode, "_PIN_OUT", DirectionType.Output);
+                                PinConnection inputForPinNode = new PinConnection(pinNode, "_PIN_IN", DirectionType.Input);
+                                pinNode.Connections.Add(outputForPinNode);
+                                pinNode.Connections.Add(inputForPinNode);
+                                foreach (PinConnection inputNodeThatRefsOutput in output.Refs)
+                                {
+                                    if (inputNodeThatRefsOutput.Refs.Count > 1 || (inputNodeThatRefsOutput.DirectionType != DirectionType.Input && inputNodeThatRefsOutput.DirectionType != DirectionType.Bidirectional))
+                                    {
+                                        throw new ApplicationException("Output node references non input node");
+                                    }
+                                    inputNodeThatRefsOutput.Refs.Clear();
+                                    inputNodeThatRefsOutput.Refs.Add(outputForPinNode);
+                                    outputForPinNode.Refs.Add(inputNodeThatRefsOutput);
+                                }
+                                output.Refs.Clear();
+                                output.Refs.Add(inputForPinNode);
+                                inputForPinNode.Refs.Add(output);
+                                _createdPinNodes.Add(pinNode);
+                            }
+                            if (parentOutputNode.IsCombinational)
+                            {
+                                CreatePinNodes(parentOutputNode);
+                            }
+                        }
                     }
                 }
             }

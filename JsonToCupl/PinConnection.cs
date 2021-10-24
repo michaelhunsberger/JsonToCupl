@@ -7,12 +7,12 @@ namespace JsonToCupl
         Unknown,
         Input,
         Output,
-        Inout
+        Bidirectional
     }
 
     class PinConnection
     {
-        public List<PinConnection> Refs { get; set; } = new List<PinConnection>();
+        public Connections Refs { get; set; } = new Connections();
         public DirectionType DirectionType { get; set; } = DirectionType.Unknown;
         public string Name { get; set; }
         public Node Parent { get; set; }
@@ -28,6 +28,8 @@ namespace JsonToCupl
         {
         }
         
-        public bool IsInput { get { return DirectionType == DirectionType.Input || DirectionType == DirectionType.Inout; } }
+        public bool InputOrBidirectional { get { return DirectionType == DirectionType.Input || DirectionType == DirectionType.Bidirectional; } }
+
+        public bool OutputOrBidirectional {  get { return DirectionType == DirectionType.Output || DirectionType == DirectionType.Bidirectional; } }
     }
 }

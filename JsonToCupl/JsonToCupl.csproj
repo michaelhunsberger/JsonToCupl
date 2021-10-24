@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="CodeGen.cs" />
     <Compile Include="Connection.cs" />
+    <Compile Include="Connections.cs" />
     <Compile Include="ContainerNode.cs" />
     <Compile Include="IJsonObj.cs" />
     <Compile Include="JsonModule.cs" />
@@ -56,6 +57,7 @@
     <Compile Include="JsonPinConnection.cs" />
     <Compile Include="JTCParseExeption.cs" />
     <Compile Include="Node.cs" />
+    <Compile Include="NodeExt.cs" />
     <Compile Include="PinConnection.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

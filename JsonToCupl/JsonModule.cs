@@ -49,7 +49,7 @@ namespace JsonToCupl
             {
                 foreach (var connection in node.Connections)
                 {
-                    if ((connection.DirectionType == DirectionType.Input || connection.DirectionType == DirectionType.Inout))
+                    if ((connection.DirectionType == DirectionType.Input || connection.DirectionType == DirectionType.Bidirectional))
                     {
                         LinkConnection(connection);
                     }
@@ -58,7 +58,7 @@ namespace JsonToCupl
 
             foreach (var connection in Connections)
             {
-                if ((connection.DirectionType == DirectionType.Input || connection.DirectionType == DirectionType.Inout))
+                if ((connection.DirectionType == DirectionType.Input || connection.DirectionType == DirectionType.Bidirectional))
                 {
                     LinkConnection(connection);
                 }
@@ -148,8 +148,7 @@ namespace JsonToCupl
                     {
                         case "direction":
                             var sval = (string)prop.Value;
-                            direction = DirectionType.Unknown;
-                            Enum.TryParse(sval, true, out direction);
+                            direction = GetDirectionType(sval);
                             //From the perspective of the inner cells, a input pin is actually an output pin and vice versa
                             switch (direction)
                             {
@@ -159,7 +158,7 @@ namespace JsonToCupl
                                 case DirectionType.Output:
                                     direction = DirectionType.Input;
                                     break;
-                                case DirectionType.Inout:
+                                case DirectionType.Bidirectional:
                                     break; //Nothing for this yet
                                 default:
                                     throw new JTCParseExeption("Unsupported port direction value", oport.Value);
@@ -252,19 +251,10 @@ namespace JsonToCupl
                         {
                             string sval = null;
                             bool succeed = false;
-                            DirectionType directionType = DirectionType.Unknown;
                             var jval = dir.Value as JValue;
                             if (jval != null)
                                 sval = jval.Value as string;
-                            if (sval != null)
-                            {
-                                if (Enum.TryParse(sval, true, out directionType))
-                                    succeed = true;
-                            }
-                            if (!succeed)
-                            {
-                                throw new JTCParseExeption($"Unknown direction literal value '{dir.Value ?? ""}'", ocell.Value);
-                            }
+                            DirectionType directionType = GetDirectionType(sval);
                             map.GetOrCreate(dir.Key).DirectionType = directionType;
                         }
                         break;
@@ -323,6 +313,17 @@ namespace JsonToCupl
             foreach (var prop in jo)
             {
                 yield return new KeyValuePair<string, object>(prop.Key, prop.Value);
+            }
+        }
+
+        static DirectionType GetDirectionType(string s)
+        {
+            switch(s)
+            {
+                case "input": return DirectionType.Input; 
+                case "output": return DirectionType.Output; 
+                case "inout": return DirectionType.Bidirectional;
+                default: return DirectionType.Unknown;
             }
         }
     }
