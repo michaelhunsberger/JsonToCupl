@@ -68,7 +68,7 @@ namespace JsonToCupl
             */
         }
 
-        private void CollapseNodes()
+        void CollapseNodes()
         {
             foreach (PinConnection con in _mod.Connections)
             {
@@ -89,7 +89,7 @@ namespace JsonToCupl
             }
         }
 
-        private void ProcessCollapseNodes(Node topNode)
+        void ProcessCollapseNodes(Node topNode)
         {
             if (_collapseNodes.Count == 0)
                 return;
@@ -208,7 +208,7 @@ namespace JsonToCupl
                             {
                                 //We only include the 'A' connection if it does not reference the foundQNodeOutput
                                 //Walk though the pinnode chain and see if it references the foundQNodeOutput
-                                //Rescript nodes to ones contained in the collapse list
+                                //Restrict nodes to ones contained in the collapse list
                                 performMove = true;
                                 for (PinConnection cur = mv;
                                     _collapseNodes.Contains(cur.Parent);
@@ -285,7 +285,8 @@ namespace JsonToCupl
         {
             return con.Refs[0].Parent.Connections.GetInputs().First();
         }
-        private void CollapseNodes(Node node)
+
+        void CollapseNodes(Node node)
         {
             if (_visited.Contains(node))
             {
@@ -329,7 +330,7 @@ namespace JsonToCupl
             }
         }
 
-        private void Symplify()
+        void Symplify()
         {
             List<PinConnection> listToRemove = new List<PinConnection>();
             do
@@ -381,7 +382,7 @@ namespace JsonToCupl
             while (listToRemove.Count > 0);
         }
 
-        private void GenerateExpressions()
+        void GenerateExpressions()
         {
             _visited.Clear();
             foreach (PinConnection con in _mod.Connections)
@@ -409,7 +410,7 @@ namespace JsonToCupl
             }
         }
 
-        private void GenerateComboLogic(PinConnection outputConnection)
+        void GenerateComboLogic(PinConnection outputConnection)
         {
             bool skip = BeginWalkOutputConnection(outputConnection);
             Node parentNode = outputConnection.Parent;
@@ -461,10 +462,10 @@ namespace JsonToCupl
                                         Console.Write(" & ");
                                         break;
                                     case NodeType.Or:
-                                        Console.Write(" | ");
+                                        Console.Write(" # ");
                                         break;
                                     case NodeType.Xor:
-                                        Console.Write(" # ");
+                                        Console.Write(" $ ");
                                         break;
                                     default:
                                         throw new ApplicationException($"Unknown combinational operator type '{parentNode.Type}'");
@@ -480,7 +481,7 @@ namespace JsonToCupl
             }
         }
 
-        private bool BeginWalkOutputConnection(PinConnection outputNode)
+        bool BeginWalkOutputConnection(PinConnection outputNode)
         {
             bool skip = false;
             if (outputNode.DirectionType != DirectionType.Output && outputNode.DirectionType != DirectionType.Bidirectional)
@@ -502,7 +503,7 @@ namespace JsonToCupl
             return skip;
         }
 
-        private void PrepareSyncronousNodes()
+        void PrepareSyncronousNodes()
         {
             foreach (Node node in _mod.Cells)
             {
@@ -519,7 +520,7 @@ namespace JsonToCupl
             }
         }
 
-        private void CreatePinNodes(Node node)
+        void CreatePinNodes(Node node)
         {
             if (node.Type != NodeType.PinNode && !_visited.Contains(node))
             {

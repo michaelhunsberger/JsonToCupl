@@ -1,0 +1,15 @@
+read_verilog SimpleTest.v
+hierarchy
+proc
+flatten
+tribuf -logic
+opt
+techmap -map +/techmap.v -map cells_latch_simple.v
+opt
+dfflibmap -prepare -liberty simple_dff.lib
+abc -g AND,XOR
+clean
+dfflibmap -liberty simple_dff.lib
+opt
+write_json SimpleTest6.json
+write_table SimpleTest6.table
