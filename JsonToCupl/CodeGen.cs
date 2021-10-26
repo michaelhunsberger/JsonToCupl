@@ -95,7 +95,7 @@ namespace JsonToCupl
                 return;
 
             //Get the topMode's output connection, if it does not exist, create one
-            PinConnection topNodeOutput = topNode.Connections.FirstOrDefault(c => c.InputOrBidirectional);
+            PinConnection topNodeOutput = topNode.Connections.FirstOrDefault(c => c.OutputOrBidirectional);
             if (topNodeOutput == null)
             {
                 topNodeOutput = new PinConnection(topNode, "_OUT", DirectionType.Output);
@@ -110,18 +110,18 @@ namespace JsonToCupl
             PinConnection foundQNodeOutput = null;
 
             //Fill the inputsToMove list
-            foreach (Node node2 in _collapseNodes)
+            foreach (Node node in _collapseNodes)
             {
                 //only consider DFF and TBUF
-                if (node2.Type == NodeType.DFF || node2.Type == NodeType.TBUF)
+                if (node.Type == NodeType.DFF || node.Type == NodeType.TBUF)
                 {
-                    if (node2.Type == NodeType.DFF)
+                    if (node.Type == NodeType.DFF)
                     {
                         if (foundQNode != null)
                             throw new ApplicationException("More than one registered output nodes found in collapse list");
-                        foundQNode = node2;
+                        foundQNode = node;
                     }
-                    foreach (PinConnection con in node2.Connections)
+                    foreach (PinConnection con in node.Connections)
                     {
                         if (con.DirectionType == DirectionType.Input)
                         {
@@ -129,7 +129,7 @@ namespace JsonToCupl
                         }
                         else if (con.DirectionType == DirectionType.Output)
                         {
-                            if (node2.Type == NodeType.DFF && con.Name == "Q")
+                            if (node.Type == NodeType.DFF && con.Name == "Q")
                             {
                                 if (foundQNodeOutput != null)
                                     throw new ApplicationException("More than one registered output node connections found in collapse list");
@@ -211,7 +211,7 @@ namespace JsonToCupl
                                 //Restrict nodes to ones contained in the collapse list
                                 performMove = true;
                                 for (PinConnection cur = mv;
-                                    _collapseNodes.Contains(cur.Parent);
+                                    cur != null && _collapseNodes.Contains(cur.Parent);
                                     cur = NextPinNodeInput(cur))
                                 {
                                     if (cur.Refs.Contains(foundQNodeOutput))
@@ -273,7 +273,9 @@ namespace JsonToCupl
                         }
                         else
                         {
-                            return IsReferencedInput(inputRef.Parent, con);
+                            Node nextParent = inputRef.Parent;
+                            if (_collapseNodes.Contains(nextParent))
+                                return IsReferencedInput(nextParent, con);
                         }
                     }
                 }
@@ -283,7 +285,13 @@ namespace JsonToCupl
 
         PinConnection NextPinNodeInput(PinConnection con)
         {
-            return con.Refs[0].Parent.Connections.GetInputs().First();
+            PinConnection ret = null;
+            var parent = con.Refs[0].Parent;
+            if (parent.Type == NodeType.PinNode)
+            {
+                ret = parent.Connections.GetInputs().First();
+            }
+            return ret;
         }
 
         void CollapseNodes(Node node)
@@ -428,7 +436,7 @@ namespace JsonToCupl
                     Console.Write(outputConnection.Name);
                     break;
                 case NodeType.Constant:
-                    Console.Write(parentNode.Constant);
+                    Console.Write("'b'" + parentNode.Constant);
                     break;
             }
             if (!skip)

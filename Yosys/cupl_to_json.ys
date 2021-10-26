@@ -4,12 +4,11 @@ proc
 flatten
 tribuf -logic
 opt
-techmap -map +/techmap.v -map cells_latch_simple.v
+techmap -map +/cupl_techmap.v -map cupl_cells_latch.v
 opt
-dfflibmap -prepare -liberty simple_dff.lib
+dfflibmap -prepare -liberty cupl_dff.lib
 abc -g AND,XOR
 clean
-dfflibmap -liberty simple_dff.lib
+dfflibmap -liberty cupl_dff.lib
 opt
 write_json SimpleTest6.json
-write_table SimpleTest6.table
