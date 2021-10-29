@@ -13,7 +13,6 @@ namespace JsonToCupl
     {
         readonly Dictionary<int, JsonPinConnection> _lookup = new Dictionary<int, JsonPinConnection>();
         readonly Dictionary<int, Node> _regs = new Dictionary<int, Node>();
-        static readonly int[] emptyBits = new int[0];
 
         int _negBitCounter = -1;
 
@@ -119,8 +118,7 @@ namespace JsonToCupl
                             {
                                 var nodename = useArrayName ? Util.GenerateName(name, ix) : name;
                                 //Check if this node is contained in the list of known registers
-                                Node foundReg;
-                                if(_regs.TryGetValue(bits[ix], out foundReg))
+                                if(_regs.TryGetValue(bits[ix], out Node foundReg))
                                 {
                                     foundReg.Name = nodename;
                                 }
@@ -128,20 +126,6 @@ namespace JsonToCupl
                             break;
                     }
                 }
-            }
-        }
-
-        sealed class PortProps
-        {
-            public readonly DirectionType Direction;
-            public readonly int[] Bits;
-            public readonly string Name;
-
-            public PortProps(DirectionType direction, int[] bits, string name)
-            {
-                this.Direction = direction;
-                this.Bits = bits;
-                this.Name = name;
             }
         }
 
@@ -191,13 +175,18 @@ namespace JsonToCupl
                             break;
                     }
                 }
+
+                if (bits == null)
+                    throw new ApplicationException("Bits not set");
                 //This is an array
                 bool useArrayName = bits.Length > 1;
                 for (int ix = 0; ix < bits.Length; ix++)
                 {
-                    var nodename = useArrayName ? Util.GenerateName(name, ix) : name;
-                    JsonPinConnection pc = new JsonPinConnection(this, nodename, direction, bits[ix]);
-                    pc.Constant = constantValue;
+                    var nodeName = useArrayName ? Util.GenerateName(name, ix) : name;
+                    JsonPinConnection pc = new JsonPinConnection(this, nodeName, direction, bits[ix])
+                    {
+                        Constant = constantValue
+                    };
                     this.Connections.Add(pc);
                 }
             }
@@ -276,7 +265,6 @@ namespace JsonToCupl
                         foreach (var dir in directions)
                         {
                             string sval = null;
-                            bool succeed = false;
                             var jval = dir.Value as JValue;
                             if (jval != null)
                                 sval = jval.Value as string;

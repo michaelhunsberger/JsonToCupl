@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace JsonToCupl
 {
@@ -17,6 +18,14 @@ namespace JsonToCupl
         PinNode
     }
 
+    [Flags]
+    enum NodeProcessState
+    {
+        None = 0,
+        MergeDFF = (1 << 0),
+        MergeTBUF = (1 << 1),
+    }
+
     class Node
     {
         readonly NodeType _type;
@@ -30,6 +39,7 @@ namespace JsonToCupl
             _constant = constant;
         }
 
+        public NodeProcessState NodeProcessState;
         public string Name { get; set; }
         public Connections Connections => _connections;
         public NodeType Type => _type;
