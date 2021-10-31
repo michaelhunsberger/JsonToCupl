@@ -8,13 +8,10 @@ namespace JsonToCupl
 {
     class ContainerNode : Node
     {
-        readonly List<Node> _cells = new List<Node>();
-
         public ContainerNode(string name, NodeType type, int constant = 0) : base(name, type, constant)
         {
         }
 
-        public List<Node> Cells => _cells;
-
+        public List<Node> Cells { get; } = new List<Node>();
     }
 }

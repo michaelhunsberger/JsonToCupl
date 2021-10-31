@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IO;
 
@@ -13,7 +14,7 @@ namespace JsonToCupl
             foreach(var mod in modules)
             {
                 CodeGen gen = new CodeGen(mod);
-                gen.Test();
+                gen.Generate(Console.Out);
             }
         }
 

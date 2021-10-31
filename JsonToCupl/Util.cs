@@ -1,10 +1,14 @@
-﻿namespace JsonToCupl
+﻿using System;
+using System.Collections.Generic;
+
+namespace JsonToCupl
 {
     static class Util
     {
+        static int _cnt = 0;
         public static string GenerateName()
         {
-            var ret = string.Concat("JTCN", cnt++);
+            var ret = string.Concat("JTCN", _cnt++);
             return ret;
         }
         public static string GenerateName(string baseName, int ix)
@@ -12,6 +16,52 @@
             return string.Concat(baseName, ix.ToString());
         }
 
-        static int cnt = 0;
+        /// <summary>
+        /// https://www.rosettacode.org/wiki/Word_wrap
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="lineWidth"></param>
+        /// <returns></returns>
+        public static string Wrap(string text, int lineWidth)
+        {
+            return string.Join(string.Empty,
+                Wrap(
+                    text.Split(new char[0],
+                        StringSplitOptions
+                            .RemoveEmptyEntries),
+                    lineWidth));
+        }
+
+        /// <summary>
+        /// https://www.rosettacode.org/wiki/Word_wrap
+        /// </summary>
+        /// <param name="words"></param>
+        /// <param name="lineWidth"></param>
+        /// <returns></returns>
+        public static IEnumerable<string> Wrap(IEnumerable<string> words,
+            int lineWidth)
+        {
+            var currentWidth = 0;
+            foreach (var word in words)
+            {
+                if (currentWidth != 0)
+                {
+                    if (currentWidth + word.Length < lineWidth)
+                    {
+                        currentWidth++;
+                        yield return " ";
+                    }
+                    else
+                    {
+                        currentWidth = 0;
+                        yield return "\r\n";
+                        //WinCupl must always have "\r\n", despite what environment this runs in
+                        //yield return "Environment.NewLine;"
+                    }
+                }
+                currentWidth += word.Length;
+                yield return word;
+            }
+        }
     }
 }

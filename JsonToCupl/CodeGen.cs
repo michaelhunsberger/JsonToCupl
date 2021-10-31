@@ -1,39 +1,36 @@
 ﻿using JsonToCupl;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mime;
+using System.Text;
 
 namespace JsonToCupl
 {
     class CodeGen
     {
-        private enum CollapseNodeState
-        {
-            Start,
-            FoundTriBuf,
-            FoundRegister
-        }
-
         readonly ContainerNode _mod;
         readonly HashSet<Node> _visited = new HashSet<Node>();
-        readonly HashSet<Node> __createdPinNodes = new HashSet<Node>();
-        readonly HashSet<Node> ___createdPins = new HashSet<Node>();
+        readonly HashSet<Node> _createdPinNodes = new HashSet<Node>();
+        readonly HashSet<Node> _createdPins = new HashSet<Node>();
 
+        //Explicitly use \r\n instead of using the Environment.NewLine 
+        const string ENDLINE = "\r\n";
 
         public CodeGen(ContainerNode mod)
         {
             _mod = mod;
         }
 
-        public void Test()
+        public void Generate(TextWriter tr)
         {
             CreatePins();
             CreateBranchingPinNodes();
             RebuildConnections();
 
-            Symplify();
+            Simplify();
             RebuildConnections();
 
             CollapseTBUF();
@@ -41,17 +38,22 @@ namespace JsonToCupl
             CollapseDFF();
             RebuildConnections();
 
-
-            GenerateExpressions();
+            WriteHeader(tr);
+            WriteGroupSeparator(tr);
+            WritePinDefinitions(tr);
+            WriteGroupSeparator(tr);
+            WritePinNodeDefinitions(tr);
+            WriteGroupSeparator(tr);
+            WriteExpressions(tr);
         }
 
         void CreatePins()
         {
-            foreach (var con in _mod.Connections)
+            foreach (PinConnection con in _mod.Connections)
             {
                 if (con.Parent.Type == NodeType.Module)
                 {
-                    var pin = con.Parent = new Node(con.Name, NodeType.Pin);
+                    Node pin = con.Parent = new Node(con.Name, NodeType.Pin);
                     pin.Connections.Add(con);
                     AddPin(pin);
                 }
@@ -60,7 +62,7 @@ namespace JsonToCupl
         void RebuildConnections()
         {
             _mod.Connections.Clear();
-            foreach (var cell in ___createdPins)
+            foreach (Node cell in _createdPins)
             {
                 switch (cell.Type)
                 {
@@ -70,7 +72,7 @@ namespace JsonToCupl
                 }
             }
 
-            foreach (var cell in __createdPinNodes)
+            foreach (Node cell in _createdPinNodes)
             {
                 switch (cell.Type)
                 {
@@ -80,7 +82,7 @@ namespace JsonToCupl
                 }
             }
 
-            foreach (var cell in _mod.Cells)
+            foreach (Node cell in _mod.Cells)
             {
                 switch (cell.Type)
                 {
@@ -92,9 +94,9 @@ namespace JsonToCupl
             }
         }
 
-        private void AddInputsToModuleConnection(Node cell)
+        void AddInputsToModuleConnection(Node cell)
         {
-            foreach (var inputConnection in cell.Connections.GetInputsOrBidirectional())
+            foreach (PinConnection inputConnection in cell.Connections.GetInputsOrBidirectional())
             {
                 if (inputConnection.Refs.Count > 0)
                     _mod.Connections.Add(inputConnection);
@@ -103,7 +105,7 @@ namespace JsonToCupl
 
         void CollapseTBUF()
         {
-            foreach (var node in _mod.Cells)
+            foreach (Node node in _mod.Cells)
             {
                 if (node.Type != NodeType.TBUF) continue;
                 PinConnection output = node.Connections.GetOutput();
@@ -113,7 +115,7 @@ namespace JsonToCupl
                 if (output.Refs.Count > 1)
                 {
                     //If this node is outputed to multiple nodes, find a candidate. 
-                    var foundPins = output.Refs.Select(r => r.Parent).Where(n => n.Type == NodeType.Pin).ToArray();
+                    Node[] foundPins = output.Refs.Select(r => r.Parent).Where(n => n.Type == NodeType.Pin).ToArray();
                     if (foundPins.Length == 1)
                     {
                         //If this DFF outputs a value to more than one node, if where is one node that is a pin, consider merging this dff to that pin
@@ -165,36 +167,15 @@ namespace JsonToCupl
 
                 UpdateReplacementNode(mergeTo, output);
 
-
                 mergeTo.NodeProcessState |= NodeProcessState.MergeTBUF;
                 output.Refs.Clear();
                 node.Connections.Clear();
             }
         }
 
-        static void UpdateReplacementNode(Node replaceNode, PinConnection output)
-        {
-            var replaceNodeOutput = replaceNode.Connections.GetOutput();
-            if (replaceNodeOutput == null)
-            {
-                replaceNodeOutput = new PinConnection(replaceNode, "_PIN_OUT", DirectionType.Output);
-                replaceNode.Connections.Add(replaceNodeOutput);
-            }
-
-            foreach (var inputNodeToOutput in output.Refs)
-            {
-                inputNodeToOutput.Refs.Clear();
-                inputNodeToOutput.Refs.Add(replaceNodeOutput);
-                if (!replaceNodeOutput.Refs.Contains(inputNodeToOutput))
-                {
-                    replaceNodeOutput.Refs.Add(inputNodeToOutput);
-                }
-            }
-        }
-
         void CollapseDFF()
         {
-            foreach (var node in _mod.Cells)
+            foreach (Node node in _mod.Cells)
             {
                 if (node.Type != NodeType.DFF) continue;
                 PinConnection output = node.Connections.GetOutput();
@@ -205,7 +186,7 @@ namespace JsonToCupl
                 if (output.Refs.Count > 1)
                 {
                     //Look for a PIN
-                    var foundPins = output.Refs.Select(r => r.Parent).Where(n => n.Type == NodeType.Pin).ToArray();
+                    Node[] foundPins = output.Refs.Select(r => r.Parent).Where(n => n.Type == NodeType.Pin).ToArray();
                     if (foundPins.Length == 1)
                     {
                         //If this DFF outputs a value to more than one node, if where is one node that is a pin, consider merging this dff to that pin
@@ -227,17 +208,12 @@ namespace JsonToCupl
                         AddPinNode(mergeTo);
                     }
                 }
-                //if ((mergeTo.NodeProcessState & NodeProcessState.MergeDFF) != 0)
-                //{
-                //    throw new ApplicationException($"Node {mergeTo.Name} already contains DFF inputs");
-                //}
 
                 PinConnection mergeToInput = null;
                 //TODO: Consider moving this code into the search for mergeTo candidate part at the top of this function ... if (output.Refs.Count > 1) ...
                 //If mergeTo was already merged as a DFF, there is no way we can merge another DFF to this pin\pinnode
                 if ((mergeTo.NodeProcessState & NodeProcessState.MergeTBUF) != 0)
                 {
-
                     mergeTo = CreatePinNodeForOutput(output, false);
                     AddPinNode(mergeTo);
                     mergeToInput = mergeTo.Connections.GetInputs().First();
@@ -262,47 +238,7 @@ namespace JsonToCupl
                         throw new ApplicationException("Inconsistent number of inputs in merge to node");
                     mergeToInput = mergeToInputs[0];
                 }
-#if false
-                //Get the proper connection of the node we are merging to
-                PinConnection mergeToInput;
-                //If mergeTo was already merged 
-                if ( (mergeTo.NodeProcessState & NodeProcessState.MergeTBUF) != 0)
-                {
-                    mergeToInput =
-                        mergeTo.Connections.Find(c => c.DirectionType == DirectionType.Input && c.Name == "A");
-                }
-                else
-                {
-                    PinConnection[] mergeToInputs = mergeTo.Connections.GetInputsOrBidirectional().ToArray();
-                    if (mergeToInputs.Length != 1)
-                    {
-                        throw new ApplicationException("DFF merge to node contains more than one input");
-                    } 
-                    mergeToInput = mergeToInputs[0];
-                }
-#endif
 
-#if false
-                PinConnection mergeToInput = null;
-                //Check if we have multiple outputs from this DFF.  If we do, atte
-                foreach (var refInput in output.Refs)
-                {
-                    if (!refInput.Refs.Contains(output))
-                        throw new ApplicationException("Input node does not contain reference to output");
-                    if (refInput.Parent == mergeTo)
-                    {
-                        if (mergeToInput != null)
-                        {
-
-                        }
-                    }
-                }
-                if (!mergeToInput.Refs.Contains(output))
-                    throw new ApplicationException("Top level node does not contain DFF output");
-
-                //Clear this input reference (which is the output of the 
-                mergeToInput.Refs.Clear();
-#endif
                 if (mergeToInput == null)
                     throw new ApplicationException("Unable to find an input connection within the merge node");
 
@@ -317,7 +253,6 @@ namespace JsonToCupl
                  * All values that reference output nee
                  *
                  */
-
                 foreach (PinConnection inputsToMerge in node.Connections.GetInputs())
                 {
                     mergeTo.Connections.Add(inputsToMerge);
@@ -365,10 +300,7 @@ namespace JsonToCupl
                     AddPinNode(pinNode);
                 }
 
-                if (true || parentOutputNode.IsCombinational)
-                {
-                    CreateBranchingPinNodes(parentOutputNode);
-                }
+                CreateBranchingPinNodes(parentOutputNode);
             }
         }
 
@@ -377,11 +309,7 @@ namespace JsonToCupl
             if (!output.OutputOrBidirectional)
                 throw new ApplicationException($"Cannot create PinNode on node {output.Parent.Name}.{output.Name}");
 
-            string newName;
-            if (output.Parent.Type == NodeType.DFF)
-                newName = output.Parent.Name;
-            else
-                newName = Util.GenerateName();
+            string newName = output.Parent.Type == NodeType.DFF ? output.Parent.Name : Util.GenerateName();
             Node pinNode = new Node(newName, NodeType.PinNode);
             PinConnection outputForPinNode = new PinConnection(pinNode, "_PIN_OUT", DirectionType.Output);
             PinConnection inputForPinNode = new PinConnection(pinNode, "_PIN_IN", DirectionType.Input);
@@ -424,64 +352,13 @@ namespace JsonToCupl
             }
         }
 
-        private void CreateUnprocessedDFFPinNodes()
-        {
-            foreach (Node cell in _mod.Cells)
-            {
-                if (cell.Type == NodeType.DFF)
-                {
-                    PinConnection outputToDff = null;
-                    foreach (var con in cell.Connections)
-                    {
-                        if (con.DirectionType == DirectionType.Output && con.Refs.Count > 0)
-                        {
-                            outputToDff = con;
-                            break;
-                        }
-                    }
-
-                    if (outputToDff != null)
-                    {
-                        // GeneratePinNode(outputToDff);
-                    }
-                }
-            }
-        }
-
-        private void CheckUnprocessedTBufs()
-        {
-            foreach (Node cell in _mod.Cells)
-            {
-                if (cell.Type == NodeType.TBUF)
-                {
-                    foreach (var con in cell.Connections)
-                    {
-                        if (con.Refs.Count > 0)
-                            throw new ApplicationException($"{con.Parent.Name}.{con.Name} was not collapsed");
-                    }
-                }
-            }
-        }
-
-        PinConnection NextPinNodeInput(PinConnection con)
-        {
-            PinConnection ret = null;
-            var parent = con.Refs[0].Parent;
-            if (parent.Type == NodeType.PinNode)
-            {
-                ret = parent.Connections.GetInputs().First();
-            }
-            return ret;
-        }
-
-
-        void Symplify()
+        void Simplify()
         {
             List<PinConnection> listToRemove = new List<PinConnection>();
             do
             {
                 listToRemove.Clear();
-                foreach (var aInput in _mod.Connections.Where((PinConnection x) => x.InputOrBidirectional))
+                foreach (PinConnection aInput in _mod.Connections.Where(x => x.InputOrBidirectional))
                 {
                     if (aInput.Refs.Count == 0)
                         continue;
@@ -517,7 +394,7 @@ namespace JsonToCupl
                     else if (a.Type == NodeType.PinNode && b.Type == NodeType.Pin)
                     {
                         bOutput.Refs.Remove(aInput);
-                        var aOutput = a.Connections.Find((PinConnection x) => x.DirectionType == DirectionType.Output);
+                        PinConnection aOutput = a.Connections.Find(x => x.DirectionType == DirectionType.Output);
                         foreach (PinConnection cInput in aOutput.Refs)
                         {
                             cInput.Refs.Remove(aOutput);
@@ -527,6 +404,7 @@ namespace JsonToCupl
                         aOutput.Refs.Clear();
                         aInput.Refs.Clear();
                         listToRemove.Add(aInput);
+                        a.NodeProcessState |= b.NodeProcessState;
                     }
                 }
                 foreach (PinConnection removeMe in listToRemove)
@@ -537,7 +415,58 @@ namespace JsonToCupl
             while (listToRemove.Count > 0);
         }
 
-        void GenerateExpressions()
+        void WriteHeader(TextWriter tr)
+        { 
+            tr.Write("Name changeme;");
+            tr.Write(ENDLINE);
+            tr.Write("Partno changeme;");
+            tr.Write(ENDLINE);
+            tr.Write($"Date {DateTime.Now.ToString("MMM yyyy")};");
+            tr.Write(ENDLINE);
+            tr.Write("Revision changeme;");
+            tr.Write(ENDLINE);
+            tr.Write("Designer changeme;");
+            tr.Write(ENDLINE);
+            tr.Write("Company changeme;");
+            tr.Write(ENDLINE);
+            tr.Write("Assembly changeme;");
+            tr.Write(ENDLINE);
+            tr.Write("Location changeme;");
+            tr.Write(ENDLINE);
+            tr.Write("Device virtual;");
+            tr.Write(ENDLINE);
+            tr.Flush();
+        }
+
+        void WriteGroupSeparator(TextWriter tr)
+        {
+            tr.Write(ENDLINE);
+            tr.Write(ENDLINE);
+            tr.Write(ENDLINE);
+            tr.Write(ENDLINE);
+        }
+
+        void WritePinDefinitions(TextWriter tr)
+        {
+            foreach (Node pin in _createdPins)
+            {
+                tr.Write("Pin      = " + pin.Name);
+                tr.Write("\r\n"); //Explicitly write \r\n, WinCupl requires line feed carriage return
+            }
+            tr.Flush();
+        }
+
+        void WritePinNodeDefinitions(TextWriter tr)
+        {
+            foreach (Node pinNode in _createdPinNodes)
+            {
+                tr.Write("PINNODE      = " + pinNode.Name);
+                tr.Write("\r\n"); //Explicitly write \r\n, WinCupl requires line feed carriage return
+            }
+            tr.Flush();
+        }
+
+        void WriteExpressions(TextWriter tr)
         {
             _visited.Clear();
             foreach (PinConnection con in _mod.Connections)
@@ -558,43 +487,66 @@ namespace JsonToCupl
                     name = con.Parent.Name + "." + con.Name;
                 }
                 _visited.Add(con.Parent);
-                Console.Write(name + " = ");
-                GenerateComboLogic(refToInput);
-                Console.WriteLine(";");
+
+                StringBuilder sb = new StringBuilder();
+
+                sb.Append(name + " = ");
+                GenerateComboLogic(refToInput, sb);
+                sb.Append(";");
+
+                tr.Write(Util.Wrap(sb.ToString(), 80));
+                tr.Write("\r\n");
+                tr.Flush();
             }
         }
 
-        void GenerateComboLogic(PinConnection outputConnection)
+        void GenerateComboLogic(PinConnection outputConnection, StringBuilder sb)
         {
-            bool skip = BeginWalkOutputConnection(outputConnection);
+            bool skip = false;
+            if (!outputConnection.OutputOrBidirectional)
+            {
+                throw new ApplicationException("Invalid connection processing point, node not an output or bidirectional");
+            }
             Node parentNode = outputConnection.Parent;
+            NodeType type = parentNode.Type;
+            NodeType nodeType = type;
+            //During development, I had to recover this function by disassembly.  Use proper switch statement  
+            if (nodeType == NodeType.Module || (uint)(nodeType - 6) <= 4u)
+            {
+                skip = true;
+            }
+            if (_visited.Contains(parentNode))
+            {
+                skip = true;
+            }
+            _visited.Add(parentNode);
+
             switch (parentNode.Type)
             {
                 case NodeType.DFF:
                 case NodeType.TBUF:
-                    Console.Write(parentNode.Name + "." + outputConnection.Name);
+                    sb.Append(parentNode.Name + "." + outputConnection.Name);
                     break;
                 case NodeType.Pin:
                 case NodeType.PinNode:
-                    Console.Write(parentNode.Name);
+                    sb.Append(parentNode.Name);
                     break;
                 case NodeType.Module:
-                    Console.Write(outputConnection.Name);
+                    sb.Append(outputConnection.Name);
                     break;
                 case NodeType.Constant:
-                    Console.Write("'b'" + parentNode.Constant);
+                    sb.Append("'b'" + parentNode.Constant);
                     break;
             }
-
             if (skip) return;
 
             if (parentNode.Type == NodeType.Not)
             {
-                Console.Write("! ( ");
+                sb.Append("! ( ");
             }
             else
             {
-                Console.Write(" ( ");
+                sb.Append(" ( ");
             }
             bool didWriteOperator = false;
             foreach (PinConnection con in parentNode.Connections)
@@ -607,18 +559,18 @@ namespace JsonToCupl
                 {
                     throw new ApplicationException("Invalid input reference count at " + con.Name);
                 }
-                GenerateComboLogic(con.Refs[0]);
+                GenerateComboLogic(con.Refs[0], sb);
                 if (didWriteOperator) continue;
                 switch (parentNode.Type)
                 {
                     case NodeType.And:
-                        Console.Write(" & ");
+                        sb.Append(" & ");
                         break;
                     case NodeType.Or:
-                        Console.Write(" # ");
+                        sb.Append(" # ");
                         break;
                     case NodeType.Xor:
-                        Console.Write(" $ ");
+                        sb.Append(" $ ");
                         break;
                     default:
                         throw new ApplicationException($"Unknown combinational operator type '{parentNode.Type}'");
@@ -627,30 +579,9 @@ namespace JsonToCupl
                 }
                 didWriteOperator = true;
             }
-            Console.Write(" )");
+            sb.Append(" )");
         }
 
-        bool BeginWalkOutputConnection(PinConnection outputNode)
-        {
-            bool skip = false;
-            if (outputNode.DirectionType != DirectionType.Output && outputNode.DirectionType != DirectionType.Bidirectional)
-            {
-                throw new ApplicationException("Invalid connection processing point, node not an oldOutputConnection " + outputNode.Name + " ");
-            }
-            Node parentNode = outputNode.Parent;
-            NodeType type = parentNode.Type;
-            NodeType nodeType = type;
-            if (nodeType == NodeType.Module || (uint)(nodeType - 6) <= 4u)
-            {
-                skip = true;
-            }
-            if (_visited.Contains(parentNode))
-            {
-                skip = true;
-            }
-            _visited.Add(parentNode);
-            return skip;
-        }
 
         void AddPinNode(Node pinNode)
         {
@@ -658,9 +589,9 @@ namespace JsonToCupl
                 throw new ArgumentNullException(nameof(pinNode));
             if (pinNode.Type != NodeType.PinNode)
                 throw new ArgumentException();
-            if (__createdPinNodes.Contains(pinNode))
+            if (_createdPinNodes.Contains(pinNode))
                 throw new ApplicationException($"Duplicate pinnode {pinNode.Name} added to created pinnode list");
-            __createdPinNodes.Add(pinNode);
+            _createdPinNodes.Add(pinNode);
         }
 
         void AddPin(Node pin)
@@ -669,9 +600,29 @@ namespace JsonToCupl
                 throw new ArgumentNullException(nameof(pin));
             if (pin.Type != NodeType.Pin)
                 throw new ArgumentException();
-            if (___createdPins.Contains(pin))
+            if (_createdPins.Contains(pin))
                 throw new ApplicationException($"Duplicate pin {pin.Name} added to created pin list");
-            ___createdPins.Add(pin);
+            _createdPins.Add(pin);
+        }
+
+        static void UpdateReplacementNode(Node replaceNode, PinConnection output)
+        {
+            PinConnection replaceNodeOutput = replaceNode.Connections.GetOutput();
+            if (replaceNodeOutput == null)
+            {
+                replaceNodeOutput = new PinConnection(replaceNode, "_PIN_OUT", DirectionType.Output);
+                replaceNode.Connections.Add(replaceNodeOutput);
+            }
+
+            foreach (PinConnection inputNodeToOutput in output.Refs)
+            {
+                inputNodeToOutput.Refs.Clear();
+                inputNodeToOutput.Refs.Add(replaceNodeOutput);
+                if (!replaceNodeOutput.Refs.Contains(inputNodeToOutput))
+                {
+                    replaceNodeOutput.Refs.Add(inputNodeToOutput);
+                }
+            }
         }
     }
 }

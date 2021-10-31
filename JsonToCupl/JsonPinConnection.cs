@@ -11,6 +11,7 @@
         {
 
         }
+
         public int Bit { get; set; }
         public int Constant { get; set; }
     }

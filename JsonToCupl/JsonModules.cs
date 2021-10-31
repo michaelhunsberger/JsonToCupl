@@ -7,14 +7,13 @@ namespace JsonToCupl
     class JsonModules : IJsonObj, IEnumerable<JsonModule>
     {
         readonly List<JsonModule> _modules = new List<JsonModule>();
-        public string Name { get; private set; }
 
         public void Build(JToken tok)
         {
             JObject jo = tok.CastJson<JObject>();
-            foreach (var cld in jo)
+            foreach (KeyValuePair<string, JToken> cld in jo)
             {
-                var module = new JsonModule(cld.Key);
+                JsonModule module = new JsonModule(cld.Key);
                 module.Build(cld.Value);
                 module.BuildNodeRefs();
                 _modules.Add(module);
