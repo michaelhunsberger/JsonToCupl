@@ -4,23 +4,23 @@ using System.Collections.Generic;
 
 namespace JsonToCupl
 {
-    class JsonModules : IJsonObj, IEnumerable<JsonModule>
+    class JModuleCollection : IJsonObj, IEnumerable<JModule>
     {
-        readonly List<JsonModule> _modules = new List<JsonModule>();
+        readonly List<JModule> _modules = new List<JModule>();
 
         public void Build(JToken tok)
         {
             JObject jo = tok.CastJson<JObject>();
             foreach (KeyValuePair<string, JToken> cld in jo)
             {
-                JsonModule module = new JsonModule(cld.Key);
+                JModule module = new JModule(cld.Key);
                 module.Build(cld.Value);
                 module.BuildNodeRefs();
                 _modules.Add(module);
             }
         }
 
-        public IEnumerator<JsonModule> GetEnumerator()
+        public IEnumerator<JModule> GetEnumerator()
         {
             return _modules.GetEnumerator();
         }

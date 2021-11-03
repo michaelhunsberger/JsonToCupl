@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace JsonToCupl
 {
@@ -8,9 +9,11 @@ namespace JsonToCupl
         static int _cnt = 0;
         public static string GenerateName()
         {
-            var ret = string.Concat("JTCN", _cnt++);
+            int id = Interlocked.Increment(ref _cnt);
+            string ret = string.Concat("JTCN", id);
             return ret;
         }
+
         public static string GenerateName(string baseName, int ix)
         {
             return string.Concat(baseName, ix.ToString());

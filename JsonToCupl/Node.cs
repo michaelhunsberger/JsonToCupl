@@ -28,22 +28,17 @@ namespace JsonToCupl
 
     class Node
     {
-        readonly NodeType _type;
-        readonly Connections _connections = new Connections();
-        readonly Connections _in = new Connections();
-        readonly int _constant;
-
         public Node(string name, NodeType type, int constant = 0)
         {
             Name = name;
-            _type = type;
-            _constant = constant;
+            Type = type;
+            Constant = constant;
         }
 
-        public NodeProcessState NodeProcessState;
+        public NodeProcessState NodeProcessState { get; set; } = NodeProcessState.None;
         public string Name { get; set; }
-        public Connections Connections => _connections;
-        public NodeType Type => _type;
-        public int Constant => _constant;
+        public Connections Connections { get; } = new Connections();
+        public NodeType Type { get; }
+        public int Constant { get; }
     }
 }

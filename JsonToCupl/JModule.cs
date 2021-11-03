@@ -9,13 +9,13 @@ namespace JsonToCupl
      * For each input bit, find output bit pin of node
      */
 
-    class JsonModule : ContainerNode, IJsonObj
+    class JModule : ContainerNode, IJsonObj
     {
-        readonly Dictionary<int, JsonPinConnection> _lookup = new Dictionary<int, JsonPinConnection>();
+        readonly Dictionary<int, JPinConnection> _lookup = new Dictionary<int, JPinConnection>();
         readonly Dictionary<int, Node> _regs = new Dictionary<int, Node>();
         int _negBitCounter = -1;
 
-        public JsonModule(string name) : base(name, NodeType.Module)
+        public JModule(string name) : base(name, NodeType.Module)
         {
 
         }
@@ -25,7 +25,7 @@ namespace JsonToCupl
             //Add this modules pins to the bit to reference lookup table
             foreach (PinConnection connection in Connections)
             {
-                JsonPinConnection con = (JsonPinConnection)connection;
+                JPinConnection con = (JPinConnection)connection;
                 if(connection.DirectionType == DirectionType.Input)
                 {
                     if (con.Bit == 0)
@@ -46,7 +46,7 @@ namespace JsonToCupl
                 {
                     if (connection.DirectionType == DirectionType.Output)
                     {
-                        JsonPinConnection con = (JsonPinConnection)connection;
+                        JPinConnection con = (JPinConnection)connection;
                         _lookup.Add(con.Bit, con);
                     }
                 }
@@ -59,7 +59,7 @@ namespace JsonToCupl
                 { 
                     if ((connection.DirectionType == DirectionType.Input || connection.DirectionType == DirectionType.Bidirectional))
                     {
-                        LinkConnection((JsonPinConnection)connection);
+                        LinkConnection((JPinConnection)connection);
                     }
                 }
             }
@@ -68,7 +68,7 @@ namespace JsonToCupl
             {
                 if ((connection.DirectionType == DirectionType.Input || connection.DirectionType == DirectionType.Bidirectional))
                 {
-                    JsonPinConnection con = (JsonPinConnection)connection;
+                    JPinConnection con = (JPinConnection)connection;
                     LinkConnection(con);
                 }
             }
@@ -94,9 +94,9 @@ namespace JsonToCupl
             }
         }
 
-        void LinkConnection(JsonPinConnection con)
+        void LinkConnection(JPinConnection con)
         {
-            JsonPinConnection r = _lookup[con.Bit];
+            JPinConnection r = _lookup[con.Bit];
             con.Refs.Add(r);
             r.Refs.Add(con);
         }
@@ -182,7 +182,7 @@ namespace JsonToCupl
                 for (int ix = 0; ix < bits.Length; ix++)
                 {
                     var nodeName = useArrayName ? Util.GenerateName(name, ix) : name;
-                    JsonPinConnection pc = new JsonPinConnection(this, nodeName, direction, bits[ix])
+                    JPinConnection pc = new JPinConnection(this, nodeName, direction, bits[ix])
                     {
                         Constant = constantValue
                     };
@@ -198,16 +198,16 @@ namespace JsonToCupl
                 Node node = ConstructCell(ocell);
                 foreach (PinConnection connection in node.Connections)
                 {
-                    JsonPinConnection jcon = (JsonPinConnection)connection;
+                    JPinConnection jcon = (JPinConnection)connection;
                     //Fix missing direction on DFF
                     if (node.Type == NodeType.DFF)
                     {
-                        switch (connection.Name)
+                        switch (jcon.Name)
                         {
-                            case "C":
-                            case "CLR":
+                            case "CK":
+                            case "AR":
                             case "D":
-                            case "PRE":
+                            case "AP":
                                 jcon.DirectionType = DirectionType.Input;
                                 break;
                             case "Q":
@@ -218,6 +218,16 @@ namespace JsonToCupl
                                 break;
                             default:
                                 throw new JTCParseExeption($"Unknown pin name {connection.Name}", ocell.Value);
+                        }
+                    }
+                    //Change name of tribuf to match cupl name
+                    else if (node.Type == NodeType.TBUF)
+                    {
+                        switch (jcon.Name)
+                        {
+                            case "E":
+                                jcon.Name = "OE";
+                                break;
                         }
                     }
                     //Check if this is a constant value (bit = 0).  Create a placeholder node for the constant
@@ -233,10 +243,10 @@ namespace JsonToCupl
             }
         }
 
-        void GenerateConstant(JsonPinConnection jcon)
+        void GenerateConstant(JPinConnection jcon)
         {
             Node constNode = new Node(Util.GenerateName(), NodeType.Constant, jcon.Constant);
-            constNode.Connections.Add(new JsonPinConnection(constNode, "OUT", DirectionType.Output, _negBitCounter));
+            constNode.Connections.Add(new JPinConnection(constNode, "OUT", DirectionType.Output, _negBitCounter));
             jcon.Bit = _negBitCounter;
             _negBitCounter--;
             Cells.Add(constNode);
@@ -246,7 +256,7 @@ namespace JsonToCupl
         {
             string name = ocell.Key;
             NodeType type = NodeType.Unknown;
-            var map = new Dictionary<string, JsonPinConnection>();
+            var map = new Dictionary<string, JPinConnection>();
             foreach (KeyValuePair<string, JToken> prop in ocell.Value.CastJson<JObject>())
             {
                 switch (prop.Key)
@@ -297,7 +307,7 @@ namespace JsonToCupl
                             }
                             if (!isok)
                                 throw new JTCParseExeption($"Unknown connection literal value '{con.Value ?? ""}", ocell.Value);
-                            JsonPinConnection cellprop = map.GetOrCreate(con.Key);
+                            JPinConnection cellprop = map.GetOrCreate(con.Key);
                             if (isconstant)
                                 cellprop.Constant = ival;
                             else
@@ -309,7 +319,7 @@ namespace JsonToCupl
             Node ret = new Node(name, type);
             //hack, build the name of each connection based on the key value within the map
             //hack, set the parent node value based on the returned node
-            foreach (KeyValuePair<string, JsonPinConnection> kv in map)
+            foreach (KeyValuePair<string, JPinConnection> kv in map)
             {
                 kv.Value.Parent = ret;
                 kv.Value.Name = kv.Key;

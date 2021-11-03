@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace JsonToCupl
 {
-    static class JsonObjUtil
+    static class JUtil
     {
         public static T CastJson<T>(this JToken tok) where T : JToken
         {

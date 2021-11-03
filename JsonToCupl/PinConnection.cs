@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace JsonToCupl
 {
@@ -17,14 +18,13 @@ namespace JsonToCupl
         public DirectionType DirectionType { get; set; } = DirectionType.Unknown;
         public string Name { get; set; }
         public Node Parent { get; set; }
+        public int Id { get; }
 
-        readonly int _id;
-        public int Id => _id;
+        static int _idCounter = 1;
+        
+		//Use a 0 seed so we get predictable results
 
-
-        static Random rand = new Random(0);
-
-        public PinConnection(Node parent, string name, DirectionType directionType) : this()
+        public PinConnection(Node parent, string name, DirectionType directionType) 
         {
             this.Name = name;
             this.Parent = parent;
@@ -33,11 +33,11 @@ namespace JsonToCupl
 
         public PinConnection()
         {
-            _id = rand.Next();
+            Id = Interlocked.Increment(ref _idCounter);
         }
         
-        public bool InputOrBidirectional { get { return DirectionType == DirectionType.Input || DirectionType == DirectionType.Bidirectional; } }
+        public bool InputOrBidirectional => DirectionType == DirectionType.Input || DirectionType == DirectionType.Bidirectional;
 
-        public bool OutputOrBidirectional {  get { return DirectionType == DirectionType.Output || DirectionType == DirectionType.Bidirectional; } }
+        public bool OutputOrBidirectional => DirectionType == DirectionType.Output || DirectionType == DirectionType.Bidirectional;
     }
 }

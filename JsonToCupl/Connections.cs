@@ -13,6 +13,18 @@ namespace JsonToCupl
             return this.FirstOrDefault(c => c.DirectionType == DirectionType.Output);
         }
 
+        public PinConnection GetOutputOrBidirectional()
+        {
+            var outputs = this.Where(c =>
+                c.DirectionType == DirectionType.Output || c.DirectionType == DirectionType.Bidirectional);
+            var outputsArr = outputs.ToArray();
+            if (outputsArr.Length == 0)
+                return null;
+            if (outputsArr.Length == 1)
+                return outputsArr[0];
+            throw new ApplicationException("Ambiguous number of output pin connections found");
+        }
+
         public IEnumerable<PinConnection> GetInputs()
         {
             return this.Where(c => c.DirectionType == DirectionType.Input);

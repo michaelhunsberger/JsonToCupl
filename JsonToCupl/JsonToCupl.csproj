@@ -46,16 +46,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CfgThrowHelper.cs" />
     <Compile Include="CodeGen.cs" />
+    <Compile Include="ErrorCode.cs" />
+    <Compile Include="ConfigException.cs" />
     <Compile Include="Connections.cs" />
     <Compile Include="ContainerNode.cs" />
+    <Compile Include="IConfig.cs" />
     <Compile Include="IJsonObj.cs" />
-    <Compile Include="JsonModule.cs" />
-    <Compile Include="JsonModules.cs" />
-    <Compile Include="JsonObjUtil.cs" />
-    <Compile Include="JsonPinConnection.cs" />
+    <Compile Include="IPins.cs" />
+    <Compile Include="JModule.cs" />
+    <Compile Include="JModuleCollection.cs" />
+    <Compile Include="JUtil.cs" />
+    <Compile Include="JPinConnection.cs" />
     <Compile Include="JTCParseExeption.cs" />
     <Compile Include="Node.cs" />
+    <Compile Include="Pins.cs" />
+    <Compile Include="ConfigArguments.cs" />
     <Compile Include="PinConnection.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -5,8 +5,15 @@ namespace JsonToCupl
 {
     public class JTCParseExeption : Exception
     {
-        public JTCParseExeption(string message, JToken tok) : base(string.Concat(message, $" Path={tok.Path}"))
+        public readonly JToken JToken;
+        public JTCParseExeption(string message, JToken tok) : base(message)
         {
+            this.JToken = tok;
+        }
+
+        public override string ToString()
+        {
+            return string.Concat("Path=", JToken.Path, Environment.NewLine, base.ToString());
         }
     }
 }
