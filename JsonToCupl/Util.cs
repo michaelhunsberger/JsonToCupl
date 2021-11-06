@@ -57,7 +57,7 @@ namespace JsonToCupl
                     else
                     {
                         currentWidth = 0;
-                        yield return "\r\n";
+                        yield return "\r\n  ";
                         //WinCupl must always have "\r\n", despite what environment this runs in
                         //yield return "Environment.NewLine;"
                     }

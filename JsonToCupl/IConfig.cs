@@ -12,5 +12,7 @@ namespace JsonToCupl
         string OutFile { get; }
         string Device { get; }
         IPins PinNums { get; }
+        string IntermediateOutFile1 { get; }
+        string IntermediateOutFile2 { get; }
     }
 }

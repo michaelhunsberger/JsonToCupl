@@ -27,15 +27,25 @@ namespace JsonToCupl
             _config = config;
         }
 
-        public void Generate()
+        public void GenerateBranchingNodes()
         {
             CreatePins();
             CreateBranchingPinNodes();
             RebuildConnections();
+            CheckConnections();
 
+
+        }
+
+        public void SimplifyConnections()
+        {
             Simplify();
             RebuildConnections();
+            CheckConnections();
+        }
 
+        public void GenerateCollapseNodes()
+        {
             CollapseTriStateBuffers();
             RebuildConnections();
             CollapseDFlipFlops();
@@ -119,6 +129,7 @@ namespace JsonToCupl
         {
             foreach (Node node in _mod.Cells.Where(c => c.Type == NodeType.TBUF))
             {
+
                 PinConnection output = node.Connections.GetOutput();
                 if (output.Refs.Count == 0) continue;
                 Node mergeTo = null;
@@ -183,7 +194,7 @@ namespace JsonToCupl
                 UpdateReplacementNode(mergeTo, output);
 
                 mergeTo.NodeProcessState |= NodeProcessState.MergeTBUF;
-                output.Refs.Clear();
+                output.Refs.Clear(); 
                 node.Connections.Clear();
                 CheckConnections();
             }
@@ -355,6 +366,8 @@ namespace JsonToCupl
                     AddPinNode(pinNode);
                 }
 
+                CheckConnections();
+
                 CreateBranchingPinNodes(parentOutputNode);
             }
         }
@@ -399,59 +412,42 @@ namespace JsonToCupl
 
             return pinNode;
         }
-        
+
 
         /// <summary>
         /// Attempts to simplify the node\connection structure.
         /// </summary>
         void Simplify()
         {
-            List<PinConnection> listToRemove = new List<PinConnection>();
-            do
+            foreach (PinConnection aInput in _mod.Connections.Where(x => x.InputOrBidirectional))
             {
-                listToRemove.Clear();
-                foreach (PinConnection aInput in _mod.Connections.Where(x => x.InputOrBidirectional))
+                if (aInput.Refs.Count == 0)
+                    continue;
+                Node a = aInput.Parent;
+                //If A has multiple inputs, then we cannot remove all of A's inputs
+                if (a.Connections.GetInputs().Count() > 1)
+                    continue;
+                PinConnection bOutput = aInput.Refs[0];
+                Node b = bOutput.Parent;
+                //If A(PinNode|Pin) = B(PinNode)
+                if (a.Type == NodeType.Pin && b.Type == NodeType.PinNode)
                 {
-                    if (aInput.Refs.Count == 0)
-                        continue;
-                    Node a = aInput.Parent;
-                    //If A has multiple inputs, then we cannot remove all of A's inputs
-                    if (a.Connections.GetInputs().Count() > 1)
-                        continue;
-                    PinConnection bOutput = aInput.Refs[0];
-                    Node b = bOutput.Parent;
-
-                    //If A(PinNode|Pin) = B(PinNode)
-                    if ((a.Type == NodeType.Pin || a.Type == NodeType.PinNode) && b.Type == NodeType.PinNode)
-                    {
-                        //Remove aInput reference (which is bOutput)
-                        aInput.Refs.Clear();
-                        //Remove bOutput reference since it is going to be merged into A
-                        bOutput.Refs.Clear();
-                        //Remove aInput from the _mod.Connections list
-                        listToRemove.Add(aInput);
-                        //Remove aInput connection, all of B's inputs will be merged into A
-                        a.Connections.Remove(aInput);
-
-                        //Merge each input from B into A, change each input that references A to B output
-                        foreach (PinConnection bInput in b.Connections.GetInputs())
-                        {
-                            a.Connections.Add(bInput);
-                            bInput.Parent = a;
-                        }
-                        a.NodeProcessState |= b.NodeProcessState;
-                    }
-                }
-                foreach (PinConnection removeMe in listToRemove)
-                {
-                    _mod.Connections.Remove(removeMe);
+                    PinConnection bInput = b.Connections.GetInputs().First();
+                    aInput.Refs.Clear();
+                    a.Connections.Remove(aInput);
+                    a.Connections.Add(bInput);
+                    bInput.Name = aInput.Name;
+                    bInput.Parent = a;
+                    UpdateReplacementNode(a, bOutput);
+                    a.NodeProcessState |= b.NodeProcessState;
+                    bOutput.Refs.Clear();
+                    b.Connections.Clear();
                 }
             }
-            while (listToRemove.Count > 0);
         }
 
         void WriteHeader(TextWriter tr)
-        { 
+        {
             tr.Write("Name Name ;");
             tr.Write(ENDLINE);
             tr.Write("Partno 00 ;");
@@ -473,7 +469,6 @@ namespace JsonToCupl
             WriteGroupSeparator(tr);
             string version = Assembly.GetAssembly(typeof(CodeGen)).GetName().Version.ToString();
             tr.Write($"/* The following was auto-generated by JsonToCUPL {version} */");
-            tr.Flush();
         }
 
         void WriteGroupSeparator(TextWriter tr)
@@ -490,9 +485,8 @@ namespace JsonToCupl
                 int pinNum = _config.PinNums[pin.Name];
                 string sPinNum = pinNum == 0 ? "" : pinNum.ToString();
                 tr.Write($"PIN  {sPinNum}  = " + pin.Name + ";");
-                tr.Write(ENDLINE); 
+                tr.Write(ENDLINE);
             }
-            tr.Flush();
         }
 
         void WritePinNodeDefinitions(TextWriter tr)
@@ -502,7 +496,6 @@ namespace JsonToCupl
                 tr.Write("PINNODE      = " + pinNode.Name + ";");
                 tr.Write(ENDLINE);
             }
-            tr.Flush();
         }
 
         void WriteExpressions(TextWriter tr)
@@ -532,11 +525,11 @@ namespace JsonToCupl
                 sb.Append(name + " = ");
                 GenerateComboLogic(refToInput, sb);
                 sb.Append(";");
-
+                string code = Util.Wrap(sb.ToString(), 80);
                 //WinCupl is old, so just assume it has some issues with lines that are too long.
-                tr.Write(Util.Wrap(sb.ToString(), 80));
+                tr.Write(code);
                 tr.Write(ENDLINE);
-                tr.Flush();
+                Console.WriteLine(code);
             }
         }
 

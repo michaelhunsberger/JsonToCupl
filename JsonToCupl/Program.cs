@@ -9,7 +9,7 @@ using System.Linq;
 namespace JsonToCupl
 {
     class Program
-    { 
+    {
         static void Main(string[] args)
         {
             IConfig config = null;
@@ -36,7 +36,20 @@ namespace JsonToCupl
                 JModuleCollection modules = GetModules(config);
                 JModule mod = modules.First();
                 gen = new CodeGen(mod, config);
-                gen.Generate();
+                gen.GenerateBranchingNodes();
+
+                if (config.IntermediateOutFile1 != null)
+                {
+                    WriteCuplCode(config.IntermediateOutFile1, gen);
+                }
+                gen.SimplifyConnections();
+
+                if (config.IntermediateOutFile2 != null)
+                {
+                    WriteCuplCode(config.IntermediateOutFile2, gen);
+                }
+
+                gen.GenerateCollapseNodes();
             }
             catch (Exception ex)
             {
@@ -45,11 +58,20 @@ namespace JsonToCupl
             }
 
             //Write CUPL
-            string outFile = config.OutFile;
+            WriteCuplCode(config.OutFile, gen);
+        }
+
+        static void WriteCuplCode(string outFile, CodeGen gen)
+        {
+            if (File.Exists(outFile))
+                File.Delete(outFile);
             using (Stream fs = File.OpenWrite(outFile))
             {
-                StreamWriter sr = new StreamWriter(fs);
-                gen.WriteCUPL(sr);
+                using (StreamWriter sr = new StreamWriter(fs))
+                {
+                    gen.WriteCUPL(sr);
+                    sr.Flush();
+                }
             }
         }
 
@@ -75,7 +97,7 @@ namespace JsonToCupl
 
             return modules;
         }
-         
+
         static JModuleCollection GetModules(string fileName)
         {
             JModuleCollection modules = null;

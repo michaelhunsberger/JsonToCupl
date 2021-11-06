@@ -1,14 +1,14 @@
-read_verilog SimpleTest.v
+read_verilog C:\Users\mjhun\Code\HDLProjects\Glue68K_New\Glue68K.v
 hierarchy
 proc
 flatten
 tribuf -logic
 opt
-techmap -map +/cupl_techmap.v -map cupl_cells_latch.v
+techmap -map +/techmap.v -map cupl_cells_latch.v
 opt
 dfflibmap -prepare -liberty cupl_dff.lib
 abc -g AND,XOR
 clean
 dfflibmap -liberty cupl_dff.lib
 opt
-write_json SimpleTest6.json
+write_json C:\Users\mjhun\Code\HDLProjects\Glue68K_New\Glue68K.json

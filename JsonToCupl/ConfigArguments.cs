@@ -13,12 +13,23 @@ namespace JsonToCupl
     class ConfigArguments : IConfig
     {
         public const string ARG_PIN_FILE = "pinfile";
-        public const string ARG_DEVICE = "device";
-        public const string ARG_HELP = "help";
+        public const string ARG_PIN_FILE_SHORT = "p";
 
+        public const string ARG_DEVICE = "device";
+        public const string ARG_DEVICE_SHORT = "d";
+
+        public const string ARG_HELP = "help";
+        public const string ARG_HELP_SHORT = "h";
+
+        public const string ARG_INTER = "inter";
+        public const string ARG_INTER_SHORT = "i";
         public string InFile { get; private set; }
         public string OutFile { get; private set; }
         public string Device { get; private set; }
+
+        bool _populateInter = false;
+        public string IntermediateOutFile1 { get; private set; }
+        public string IntermediateOutFile2 { get; private set; }
 
         string _pinFile;
         public IPins PinNums { get; private set; } = Pins.Empty;
@@ -64,11 +75,17 @@ namespace JsonToCupl
                     key = key.Trim('-');
                     switch (key)
                     {
+                        case ARG_PIN_FILE_SHORT:
                         case ARG_PIN_FILE:
                             ret._pinFile = args[ix++];
                             break;
+                        case ARG_DEVICE_SHORT:
                         case ARG_DEVICE:
                             ret.Device = args[ix++];
+                            break;
+                        case ARG_INTER_SHORT:
+                        case ARG_INTER:
+                            ret._populateInter = true;
                             break;
                         default:
                             CfgThrowHelper.InvalidArgName(key);
@@ -78,15 +95,20 @@ namespace JsonToCupl
 
                 ret.InFile = args[ix++];
                 ret.OutFile = args[ix];
+
+                if (ret._populateInter)
+                {
+                    ret.IntermediateOutFile1 = Path.Combine(Path.GetDirectoryName(ret.OutFile),
+                        Path.GetFileNameWithoutExtension(ret.OutFile) + ".it1");
+                    ret.IntermediateOutFile2 = Path.Combine(Path.GetDirectoryName(ret.OutFile),
+                        Path.GetFileNameWithoutExtension(ret.OutFile) + ".it2");
+                }
             }
             catch (IndexOutOfRangeException)
             {
                 CfgThrowHelper.InvalidNumberOfArguments();
             }
-
-
             Check(ret);
-
             if (!string.IsNullOrEmpty(ret._pinFile))
             {
                 using (Stream fs = File.OpenRead(ret._pinFile))
