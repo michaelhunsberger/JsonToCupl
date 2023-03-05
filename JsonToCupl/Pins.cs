@@ -50,7 +50,7 @@ namespace JsonToCupl
             while ((line = tr.ReadLine()) != null)
             {
                 string[] parts = line.Split(':');
-                if (parts.Length == 7)
+                if (parts.Length >= 2)
                 {
                     string pinName = parts[0].Trim();
                     pinName = GeneratePinName(pinName);

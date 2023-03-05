@@ -12,6 +12,7 @@ namespace JsonToCupl
         Xor,
         Not,
         DFF,
+        Latch,
         TBUF,
         Constant,
         Pin,

@@ -199,8 +199,20 @@ namespace JsonToCupl
                 foreach (PinConnection connection in node.Connections)
                 {
                     JPinConnection jcon = (JPinConnection)connection;
+                    if(node.Type == NodeType.Latch)
+                    {
+                        switch(jcon.Name)
+                        {
+                            case "D":
+                                jcon.Name = "L"; //L specifies its a latch
+                                break;
+                            case "G":
+                                jcon.Name = "LE"; //LE is latch enable
+                                break;
+                        } 
+                    }
                     //Fix missing direction on DFF
-                    if (node.Type == NodeType.DFF)
+                    if (node.Type.IsDFFOrLatch())
                     {
                         switch (jcon.Name)
                         {
@@ -208,11 +220,14 @@ namespace JsonToCupl
                             case "AR":
                             case "D":
                             case "AP":
+                            case "LE":
+                            case "PRE":
+                            case "CLR":
+                            case "L":
                                 jcon.DirectionType = DirectionType.Input;
                                 break;
                             case "Q":
                                 jcon.DirectionType = DirectionType.Output;
-
                                 //Add register to list of registers
                                 _regs.Add(jcon.Bit, node);
                                 break;
