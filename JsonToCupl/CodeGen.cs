@@ -17,8 +17,8 @@ namespace JsonToCupl
         readonly HashSet<Node> _visited = new HashSet<Node>();
         readonly HashSet<Node> _createdPinNodes = new HashSet<Node>();
         readonly HashSet<Node> _createdPins = new HashSet<Node>();
-
         readonly IConfig _config;
+
         //Explicitly use \r\n instead of using the Environment.NewLine.
         const string ENDLINE = "\r\n";
 
@@ -28,14 +28,20 @@ namespace JsonToCupl
             _config = config;
         }
 
+        /// <summary>
+        /// Creates initial PINs and PINNODEs
+        /// </summary>
         public void GenerateBranchingNodes()
         {
             CreatePins();
-            CreateBranchingPinNodes();
+            CreateBranchingPinNodes(_mod);
             RebuildConnections();
             CheckConnections();
         }
 
+        /// <summary>
+        /// Finds redundant node connections and eliminates them
+        /// </summary>
         public void SimplifyConnections()
         {
             Simplify();
@@ -43,6 +49,29 @@ namespace JsonToCupl
             CheckConnections();
         }
 
+        /// <summary>
+        /// Collapses DFFs, Latches, and TBUFs into ether a pin or pinnode
+        /// In WinCUPL, these components are inferred by the type of input connection name.
+        /// 
+        /// For example, if we have PIN|PINNODE a 
+        /// 
+        /// a.OE = .... output enable of pin a, this node is tri-state
+        /// a.D = .... D value of a d flip flop
+        /// a.CK = .... clock value of the flip flop
+        /// a.AR = ..... Async reset of the flip flop
+        /// a.AP = ..... Async preset of the flip flop 
+        /// 
+        /// 
+        /// 
+        /// Another example, if we have a PINNODE b
+        /// 
+        /// b.OE = ..... tri-state output enable for the latch
+        /// b.L = .... latch data value
+        /// b.LE = .... latch enable value
+        /// 
+        /// Latches appear to not have async reset\preset in WINCUPL
+        /// 
+        /// </summary>
         public void GenerateCollapseNodes()
         {
             CollapseTriStateBuffers();
@@ -51,6 +80,10 @@ namespace JsonToCupl
             RebuildConnections();
         }
 
+        /// <summary>
+        /// Emits WinCUPL mumbo jumbo
+        /// </summary>
+        /// <param name="tr"></param>
         public void WriteCUPL(TextWriter tr)
         {
             WriteHeader(tr);
@@ -62,6 +95,10 @@ namespace JsonToCupl
             WriteExpressions(tr);
         }
 
+        /// <summary>
+        /// Looks though the module connections where the parent node is a module.
+        /// If the parent node is a module, then this connection must be a PIN
+        /// </summary>
         void CreatePins()
         {
             foreach (PinConnection con in _mod.Connections.Where(c => c.Parent.Type == NodeType.Module))
@@ -109,6 +146,11 @@ namespace JsonToCupl
             }
         }
 
+        /// <summary>
+        /// Loops though each nodes input connections, if there are no referencess to that input internally within the node graph, then it must come externally
+        /// and is considered a top level input connection
+        /// </summary>
+        /// <param name="cell"></param>
         void AddInputsToModuleConnection(Node cell)
         {
             foreach (PinConnection inputConnection in cell.Connections.GetInputsOrBidirectional())
@@ -130,36 +172,12 @@ namespace JsonToCupl
             foreach (Node node in _mod.Cells.Where(c => c.Type == NodeType.TBUF))
             {
                 PinConnection output = node.Connections.GetOutput();
-                if (output.Refs.Count == 0) continue;
-                Node mergeTo = null;
-
-                if (output.Refs.Count > 1)
-                {
-                    //If this node is outputted to multiple nodes, find a candidate pin 
-                    Node[] foundPins = output.Refs.Select(r => r.Parent).Where(n => n.Type == NodeType.Pin).ToArray();
-                    if (foundPins.Length == 1)
-                    {
-                        mergeTo = foundPins[0];
-                    }
-                    else
-                    {
-                        mergeTo = CreatePinNodeForOutput(output);
-                        AddPinNode(mergeTo);
-                    }
-                }
-                else
-                {
-                    mergeTo = output.Refs.First().Parent;
-                    if (mergeTo.Type != NodeType.Pin && mergeTo.Type != NodeType.PinNode)
-                    {
-                        mergeTo = CreatePinNodeForOutput(output);
-                        AddPinNode(mergeTo);
-                    }
-                }
+                if (output.Refs.Count == 0)
+                    continue;
+                Node mergeTo = GetMergeToTarget(output);
                 Trace.Assert((mergeTo.NodeProcessState & NodeProcessState.MergeTBUF) == 0, $"Node {mergeTo.Name} already contains TBUF inputs");
-                //Input connection to the mergeTo Node
                 PinConnection[] inputsToMergeTo = mergeTo.Connections.GetInputsOrBidirectional().ToArray();
-                Trace.Assert(inputsToMergeTo.Length == 1, "mergeTo node contains multiple inputs"); 
+                Trace.Assert(inputsToMergeTo.Length == 1, "mergeTo node contains multiple inputs");
                 PinConnection mergeToInput = inputsToMergeTo[0];
                 Trace.Assert(mergeToInput.Refs.Contains(output), "Top level node does not contain TBUF output");
                 mergeToInput.Refs.Clear();
@@ -169,7 +187,7 @@ namespace JsonToCupl
                     if (inputToTBUF.Name == "A")
                     {
                         //If inputsToMerge is the value part of the TBUF, attach the referenced output to the input pin
-                        //we are merging to instead of just adding the connection
+                        //we are merging instead of just adding the connection
                         mergeToInput.Refs.Add(outputToInputToMerge);
                         outputToInputToMerge.Refs.Remove(inputToTBUF);
                         outputToInputToMerge.Refs.Add(mergeToInput);
@@ -184,80 +202,37 @@ namespace JsonToCupl
                 UpdateReplacementNode(mergeTo, output);
 
                 mergeTo.NodeProcessState |= NodeProcessState.MergeTBUF;
-                output.Refs.Clear(); 
+                output.Refs.Clear();
                 node.Connections.Clear();
                 CheckConnections();
             }
         }
 
-        void CheckNode(Node node)
-        {
-            PinConnection output = node.Connections.GetOutput();
-            if (output != null)
-            {
-                foreach (var inputRefOutput in output.Refs)
-                {
-                    Trace.Assert(inputRefOutput.InputOrBidirectional, "Non input connection referenced by output");
-                    Trace.Assert(inputRefOutput.Refs.Contains(output), "Input connection does not reference required output connection");
-                }
-            }
-
-            foreach (var input in node.Connections.GetInputsOrBidirectional())
-            {
-                foreach (var outputRefInput in input.Refs)
-                {
-                    Trace.Assert(outputRefInput.DirectionType == DirectionType.Output, "Non output connection referenced by input");
-                    Trace.Assert(outputRefInput.Refs.Contains(input), "Output connection does not reference required input connection");
-                }
-            }
-        }
-		
+        /// <summary>
+        /// Collapses latches and flip flops into their respective PIN or PINNODE.  If a single candidate is not found, then a PINNODE is created in its place.
+        /// 
+        /// After this operation, there should be no more nodes of type DFF or Latch, they all should have been merged into a respective PIN or PINNODE
+        /// </summary>
         void CollapseRegisters()
         {
             foreach (Node node in _mod.Cells.Where(c => c.Type.IsDFFOrLatch()))
             {
                 PinConnection output = node.Connections.GetOutput();
-                if (output.Refs.Count == 0) continue;
-                Node mergeTo = null;
+                if (output.Refs.Count == 0) 
+                    continue;
 
-                //If this dff or latch references more than one node, find a node candidate that we can merge to
-                if (output.Refs.Count > 1)
-                {
-                    //Look for a PIN
-                    Node[] foundPins = output.Refs.Select(r => r.Parent).Where(n => n.Type == NodeType.Pin).ToArray();
-                    if (foundPins.Length == 1)
-                    {
-                        mergeTo = foundPins[0];
-                    }
-                    else
-                    {
-                        //We reference to more than one node, so create a pinnode and merge into that
-                        mergeTo = CreatePinNodeForOutput(output);
-                        AddPinNode(mergeTo);
-                    }
-                }
-                else
-                {
-                    mergeTo = output.Refs[0].Parent;
-                    if (mergeTo.Type != NodeType.Pin && mergeTo.Type != NodeType.PinNode)
-                    {
-                        mergeTo = CreatePinNodeForOutput(output);
-                        AddPinNode(mergeTo);
-                    }
-                }
+                Node mergeTo = GetMergeToTarget(output);
 
-                PinConnection mergeToInput = null;
-                //TODO: Consider moving this code into the search for mergeTo candidate part at the top of this function
-                //... if (output.Refs.Count > 1) ...
-                //If mergeTo was already merged as a DFF, do not merge another DFF to this pin\pinnode
+                PinConnection mergeToInput;
+                //If mergeTo already is a DFF, do not merge, create another PinNode
                 if ((mergeTo.NodeProcessState & NodeProcessState.MergeDFF) != 0)
                 {
                     mergeTo = CreatePinNodeForOutput(output);
                     AddPinNode(mergeTo);
                     mergeToInput = mergeTo.Connections.GetInputs().First();
                 }
-                //We can only merge into a node processed as a tbuf if the DFF output goes to the TBUF input (not the output enable)
-                //WARNING! Consider only doing this if the dff is only outputted to the tbuf and not other nodes
+                //We can only merge into a node processed as a tbuf if the dff output goes to the tbuf input (not the output enable)
+                //If the output is the OE of the tbuf, or the output of this dff is referenced by more than one node, then we need a new PINNODE
                 else if ((mergeTo.NodeProcessState & NodeProcessState.MergeTBUF) != 0)
                 {
                     mergeToInput = mergeTo.Connections.Find(c => c.Refs.Contains(output));
@@ -277,7 +252,6 @@ namespace JsonToCupl
                     mergeToInput = mergeToInputs[0];
                 }
 
-                Trace.Assert(mergeToInput != null, "Unable to find an input connection within the merge node");
 
                 //Clear this input reference (which is the output of node)
                 mergeToInput.Refs.Clear();
@@ -305,10 +279,66 @@ namespace JsonToCupl
             }
         }
 
-        void CreateBranchingPinNodes()
+        /// <summary>
+        /// For DFFs, latches, or tri-state buffers.  Attempts to find a suitable pin or pinnode to collapse to.  If no suitable pinnode or pin is found, then a 
+        /// pinnode is created (it becomes buried logic)
+        /// </summary>
+        /// <param name="output"></param>
+        /// <returns></returns>
+        Node GetMergeToTarget(PinConnection output)
         {
-            CreateBranchingPinNodes(_mod);
+            Node mergeTo;
+            //If this dff or latch references more than one node, find a node candidate that we can merge to
+            if (output.Refs.Count > 1)
+            {
+                //Look for a PIN
+                Node[] foundPins = output.Refs.Select(r => r.Parent).Where(n => n.Type == NodeType.Pin).ToArray();
+                if (foundPins.Length == 1)
+                {
+                    mergeTo = foundPins[0];
+                }
+                else
+                {
+                    //We reference to more than one node, so create a pinnode and merge into that
+                    mergeTo = CreatePinNodeForOutput(output);
+                    AddPinNode(mergeTo);
+                }
+            }
+            else
+            {
+                mergeTo = output.Refs[0].Parent;
+                if (mergeTo.Type != NodeType.Pin && mergeTo.Type != NodeType.PinNode)
+                {
+                    mergeTo = CreatePinNodeForOutput(output);
+                    AddPinNode(mergeTo);
+                }
+            }
+            return mergeTo;
         }
+
+        void CheckNode(Node node)
+        {
+            PinConnection output = node.Connections.GetOutput();
+            if (output != null)
+            {
+                foreach (var inputRefOutput in output.Refs)
+                {
+                    Trace.Assert(inputRefOutput.InputOrBidirectional, "Non input connection referenced by output");
+                    Trace.Assert(inputRefOutput.Refs.Contains(output), "Input connection does not reference required output connection");
+                }
+            }
+
+            foreach (var input in node.Connections.GetInputsOrBidirectional())
+            {
+                foreach (var outputRefInput in input.Refs)
+                {
+                    Trace.Assert(outputRefInput.DirectionType == DirectionType.Output, "Non output connection referenced by input");
+                    Trace.Assert(outputRefInput.Refs.Contains(input), "Output connection does not reference required input connection");
+                }
+            }
+        }
+
+     
 
         /// <summary>
         /// Recursively walks though all input connections of a node
@@ -390,29 +420,33 @@ namespace JsonToCupl
         /// </summary>
         void Simplify()
         {
+            //Loop though each input connection in the module
             foreach (PinConnection aInput in _mod.Connections.Where(x => x.InputOrBidirectional))
             {
+                //Skip if input has no referecens
                 if (aInput.Refs.Count == 0)
                     continue;
+
+                //Get the Node of the input connection
                 Node a = aInput.Parent;
-                //If A has multiple inputs, then we cannot remove all of A's inputs
+
+                //If a has multiple inputs, then we cannot remove all of a's inputs (cannot simply)
                 if (a.Connections.GetInputs().Count() > 1)
                     continue;
+
+                //Get the sole output connection (bInput) for this input connection (aInput)
                 PinConnection bOutput = aInput.Refs[0];
+
+                //Get the parent node b for bInput connection
                 Node b = bOutput.Parent;
-                //If A(PinNode|Pin) = B(PinNode)
+
+                //If a is a Pin and b in a PinNode
+                //Since a PinNode is buried logic within a node structure and should only have 1 input, the result of some combinational logic, we can just
+                //remove that node
                 if (a.Type == NodeType.Pin && b.Type == NodeType.PinNode)
                 {
-                    PinConnection bInput = b.Connections.GetInputs().First();
-                    aInput.Refs.Clear();
-                    a.Connections.Remove(aInput);
-                    a.Connections.Add(bInput);
-                    bInput.Name = aInput.Name;
-                    bInput.Parent = a;
-                    UpdateReplacementNode(a, bOutput);
-                    a.NodeProcessState |= b.NodeProcessState;
-                    bOutput.Refs.Clear();
-                    b.Connections.Clear();
+                    //This will remove node PinNode, merge its input into a
+                    RemoveAdjacentNode(aInput);
                 }
             }
 
@@ -450,6 +484,51 @@ namespace JsonToCupl
             {
                 _mod.Cells.Remove(node);
             }
+        }
+
+        /// <summary>
+        /// Removes the adjacent node that is referenced by aInput.  The inputs of the adjacent node is moved to the input connections parent node
+        /// </summary>
+        /// <param name="aInput">The input connection to the node we want to keep.  The node referencing the </param>
+        static void RemoveAdjacentNode(PinConnection aInput)
+        {
+            Trace.Assert(aInput.InputOrBidirectional, "Cannot remove adjacent node of output node");
+
+            Node a = aInput.Parent;
+
+            //Get the sole output connection (bInput) for this input connection (aInput)
+            PinConnection bOutput = aInput.Refs[0];
+
+            //Get the parent node b for bInput connection
+            Node b = bOutput.Parent;
+
+            //Remove the bOutput PinConnection reference from aInput
+            aInput.Refs.Clear();
+
+            //Get the input connection for PinNode b (bInput) 
+            PinConnection bInput = b.Connections.GetInputs().First();
+
+            //Remove the aInput from the a PIN
+            a.Connections.Remove(aInput);
+
+            //Change the name of bInput to match old aInput
+            bInput.Name = aInput.Name;
+
+            //Add the bInput connection to a
+            a.Connections.Add(bInput);
+
+            //Change the parent node of bInput to a
+            bInput.Parent = a;
+            UpdateReplacementNode(a, bOutput);
+
+            //Copy process state of b into a
+            a.NodeProcessState |= b.NodeProcessState;
+
+            //Clear all references held in bOutput 
+            bOutput.Refs.Clear();
+
+            //Clear all connections of b (its gone now, b's inputs was copyied into a)
+            b.Connections.Clear();
         }
 
         void WriteHeader(TextWriter tr)
@@ -628,17 +707,27 @@ namespace JsonToCupl
             _createdPinNodes.Add(pinNode);
         }
 
+        /// <summary>
+        /// Adds a pin, a special node that is externally accessible 
+        /// </summary>
+        /// <param name="pin"></param>
         void AddPin(Node pin)
         {
-            if (pin.Type != NodeType.Pin)
-                throw new ArgumentException();
-            if (_createdPins.Contains(pin))
-                throw new ApplicationException($"Duplicate pin {pin.Name} added to created pin list");
+            Trace.Assert(pin.Type == NodeType.Pin, "Adding node that is not a Pin");
+            Trace.Assert(false == _createdPins.Contains(pin), "Pin node already added to pin collection");
             _createdPins.Add(pin);
         }
 
+        /// <summary>
+        /// For a given output connection, look for all referenced input connections and move them into the referene of the replaceNode's output connection
+        /// 
+        /// </summary>
+        /// <param name="replaceNode"></param>
+        /// <param name="output"></param>
         static void UpdateReplacementNode(Node replaceNode, PinConnection output)
         {
+            Trace.Assert(output.OutputOrBidirectional, "Cannot Update a replacement node for a non output connection");
+
             PinConnection replaceNodeOutput = replaceNode.Connections.GetOutput();
             if (replaceNodeOutput == null)
             {
