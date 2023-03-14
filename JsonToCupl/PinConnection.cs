@@ -12,6 +12,9 @@ namespace JsonToCupl
         Bidirectional
     }
 
+    /// <summary>
+    /// TODO, perhaps a better name would have been PortConnection, 'pin' implies external connection outside of a module
+    /// </summary>
     class PinConnection
     {
         public Connections Refs { get; set; } = new Connections();
@@ -21,8 +24,6 @@ namespace JsonToCupl
         public int Id { get; }
 
         static int _idCounter = 1;
-        
-		//Use a 0 seed so we get predictable results
 
         public PinConnection(Node parent, string name, DirectionType directionType) 
         {
@@ -41,3 +42,4 @@ namespace JsonToCupl
         public bool OutputOrBidirectional => DirectionType == DirectionType.Output || DirectionType == DirectionType.Bidirectional;
     }
 }
+    

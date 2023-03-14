@@ -14,5 +14,6 @@ namespace JsonToCupl
         IPins PinNums { get; }
         string IntermediateOutFile1 { get; }
         string IntermediateOutFile2 { get; }
+        bool GenerateYosys { get; }
     }
 }

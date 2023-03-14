@@ -47,11 +47,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CfgThrowHelper.cs" />
-    <Compile Include="CodeGen.cs" />
+    <Compile Include="CodeGenCupl.cs" />
+    <Compile Include="CodeGenException.cs" />
+    <Compile Include="CodeGenYosys.cs" />
     <Compile Include="ErrorCode.cs" />
     <Compile Include="ConfigException.cs" />
     <Compile Include="Connections.cs" />
     <Compile Include="ContainerNode.cs" />
+    <Compile Include="ICodeGen.cs" />
     <Compile Include="IConfig.cs" />
     <Compile Include="IJsonObj.cs" />
     <Compile Include="IPins.cs" />
@@ -72,6 +75,19 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <None Include="Yosys\abc.history" />
+    <None Include="Yosys\cupl_cells_latch.v" />
+    <None Include="Yosys\cupl_dff.lib" />
+    <None Include="Yosys\cupl_techmap.v" />
+    <None Include="Yosys\cupl_to_json.tcl" />
+    <None Include="Yosys\cupl_to_json.ys" />
+    <None Include="Yosys\cupl_to_json_latch.ys" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Yosys\arguments.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>XCOPY "$(SolutionDir)JsonToCupl\Yosys" "$(TargetDir)\Yosys" /s /i /y</PreBuildEvent>
+  </PropertyGroup>
 </Project>

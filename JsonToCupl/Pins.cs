@@ -10,6 +10,9 @@ using System.Threading.Tasks;
 
 namespace JsonToCupl
 {
+    /// <summary>
+    /// Used for the pins file in CUPL
+    /// </summary>
     class Pins : IPins
     {
         readonly Dictionary<string, int> _pins;

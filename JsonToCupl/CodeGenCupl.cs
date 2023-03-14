@@ -11,7 +11,7 @@ using System.Text;
 
 namespace JsonToCupl
 {
-    class CodeGen
+    class CodeGenCupl : CodeGenBase
     {
         readonly ContainerNode _mod;
         readonly HashSet<Node> _visited = new HashSet<Node>();
@@ -22,7 +22,7 @@ namespace JsonToCupl
         //Explicitly use \r\n instead of using the Environment.NewLine.
         const string ENDLINE = "\r\n";
 
-        public CodeGen(ContainerNode mod, IConfig config)
+        public CodeGenCupl(ContainerNode mod, IConfig config)
         {
             _mod = mod;
             _config = config;
@@ -84,7 +84,7 @@ namespace JsonToCupl
         /// Emits WinCUPL mumbo jumbo
         /// </summary>
         /// <param name="tr"></param>
-        public void WriteCUPL(TextWriter tr)
+        public override void GenerateCode(TextWriter tr)
         {
             WriteHeader(tr);
             WriteGroupSeparator(tr);
@@ -109,6 +109,11 @@ namespace JsonToCupl
             }
         }
 		
+        /// <summary>
+        /// Loops though created pins and pinNodes and adds a connection within the module, this way it can become traversable during code generation
+        /// TODO: The code generator is using this function too much.  We should only do this when a pin or pinnode is created, and we could perform a
+        /// add/remove connection when adding and removing pin/pinnodes
+        /// </summary>
         void RebuildConnections()
         {
             _mod.Connections.Clear();
@@ -147,7 +152,7 @@ namespace JsonToCupl
         }
 
         /// <summary>
-        /// Loops though each nodes input connections, if there are no referencess to that input internally within the node graph, then it must come externally
+        /// Loops though each nodes input connections, if there are no references to that input internally within the node graph, then it must come externally
         /// and is considered a top level input connection
         /// </summary>
         /// <param name="cell"></param>
@@ -162,7 +167,7 @@ namespace JsonToCupl
 
         /// <summary>
         /// Collapses tri-state buffers into their respective PIN or PINNODE
-        /// If TBUF's output is referenced by more than one node, it attempts to find a sutible
+        /// If TBUF's output is referenced by more than one node, it attempts to find a suitable
         /// PIN candidate.
         ///
         /// If a single candidate is not found, then a PINNODE is created in its place.
@@ -175,11 +180,11 @@ namespace JsonToCupl
                 if (output.Refs.Count == 0)
                     continue;
                 Node mergeTo = GetMergeToTarget(output);
-                Trace.Assert((mergeTo.NodeProcessState & NodeProcessState.MergeTBUF) == 0, $"Node {mergeTo.Name} already contains TBUF inputs");
+                Assert((mergeTo.NodeProcessState & NodeProcessState.MergeTBUF) == 0, $"Node {mergeTo.Name} already contains TBUF inputs");
                 PinConnection[] inputsToMergeTo = mergeTo.Connections.GetInputsOrBidirectional().ToArray();
-                Trace.Assert(inputsToMergeTo.Length == 1, "mergeTo node contains multiple inputs");
+                Assert(inputsToMergeTo.Length == 1, "mergeTo node contains multiple inputs");
                 PinConnection mergeToInput = inputsToMergeTo[0];
-                Trace.Assert(mergeToInput.Refs.Contains(output), "Top level node does not contain TBUF output");
+                Assert(mergeToInput.Refs.Contains(output), "Top level node does not contain TBUF output");
                 mergeToInput.Refs.Clear();
                 foreach (PinConnection inputToTBUF in node.Connections.GetInputs())
                 {
@@ -248,7 +253,7 @@ namespace JsonToCupl
                 {
                     //Check to make sure there are not multiple inputs
                     PinConnection[] mergeToInputs = mergeTo.Connections.GetInputs().ToArray();
-                    Trace.Assert(mergeToInputs.Length == 1, "Inconsistent number of inputs in merge to node");
+                    Assert(mergeToInputs.Length == 1, "Inconsistent number of inputs in merge to node");
                     mergeToInput = mergeToInputs[0];
                 }
 
@@ -316,6 +321,10 @@ namespace JsonToCupl
             return mergeTo;
         }
 
+        /// <summary>
+        /// Makes sure that referenced connections are proper (output connection is not within the references of another output connection)
+        /// </summary>
+        /// <param name="node"></param>
         void CheckNode(Node node)
         {
             PinConnection output = node.Connections.GetOutput();
@@ -323,8 +332,8 @@ namespace JsonToCupl
             {
                 foreach (var inputRefOutput in output.Refs)
                 {
-                    Trace.Assert(inputRefOutput.InputOrBidirectional, "Non input connection referenced by output");
-                    Trace.Assert(inputRefOutput.Refs.Contains(output), "Input connection does not reference required output connection");
+                    Assert(inputRefOutput.InputOrBidirectional, "Non input connection referenced by output");
+                    Assert(inputRefOutput.Refs.Contains(output), "Input connection does not reference required output connection");
                 }
             }
 
@@ -332,8 +341,8 @@ namespace JsonToCupl
             {
                 foreach (var outputRefInput in input.Refs)
                 {
-                    Trace.Assert(outputRefInput.DirectionType == DirectionType.Output, "Non output connection referenced by input");
-                    Trace.Assert(outputRefInput.Refs.Contains(input), "Output connection does not reference required input connection");
+                    Assert(outputRefInput.DirectionType == DirectionType.Output, "Non output connection referenced by input");
+                    Assert(outputRefInput.Refs.Contains(input), "Output connection does not reference required input connection");
                 }
             }
         }
@@ -356,9 +365,9 @@ namespace JsonToCupl
             foreach (PinConnection connection in node.Connections.Where(c => c.InputOrBidirectional))
             {
                 if (connection.Refs.Count == 0) continue;
-                Trace.Assert(connection.Refs.Count == 1, "Invalid number of connections to input node " + connection.Name);
+                Assert(connection.Refs.Count == 1, "Invalid number of connections to input node " + connection.Name);
                 PinConnection output = connection.Refs[0];
-                Trace.Assert(output.OutputOrBidirectional == true, "Unknown connection to input node " + connection.Name);
+                Assert(output.OutputOrBidirectional == true, "Unknown connection to input node " + connection.Name);
                 Node parentOutputNode = output.Parent;
                 //Do not generate pinnodes for non combinational logic nodes.
                 if (parentOutputNode.Type != NodeType.PinNode &&
@@ -384,7 +393,7 @@ namespace JsonToCupl
         /// <returns>An new pinnode</returns>
         Node CreatePinNodeForOutput(PinConnection oldOutputConnection)
         {
-            Trace.Assert(oldOutputConnection.OutputOrBidirectional, $"Cannot create PinNode on node {oldOutputConnection.Parent.Name}.{oldOutputConnection.Name}");
+            Assert(oldOutputConnection.OutputOrBidirectional, $"Cannot create PinNode on node {oldOutputConnection.Parent.Name}.{oldOutputConnection.Name}");
             string newName = oldOutputConnection.Parent.Type.IsDFFOrLatch() ? oldOutputConnection.Parent.Name : Util.GenerateName();
             Node pinNode = new Node(newName, NodeType.PinNode);
             PinConnection newOutputConnection = new PinConnection(pinNode, "_PIN_OUT", DirectionType.Output);
@@ -398,11 +407,7 @@ namespace JsonToCupl
             //3. clear old oldOutputConnection connection references
             foreach (PinConnection inputNodeThatRefsOutput in oldOutputConnection.Refs)
             {
-                if (inputNodeThatRefsOutput.Refs.Count > 1 || false == inputNodeThatRefsOutput.InputOrBidirectional)
-                {
-                    throw new ApplicationException("Output node references non input node");
-                }
-
+                Assert(inputNodeThatRefsOutput.Refs.Count <= 1 && inputNodeThatRefsOutput.InputOrBidirectional, "Output node references non input node");
                 inputNodeThatRefsOutput.Refs.Clear();
                 inputNodeThatRefsOutput.Refs.Add(newOutputConnection);
                 newOutputConnection.Refs.Add(inputNodeThatRefsOutput);
@@ -423,7 +428,7 @@ namespace JsonToCupl
             //Loop though each input connection in the module
             foreach (PinConnection aInput in _mod.Connections.Where(x => x.InputOrBidirectional))
             {
-                //Skip if input has no referecens
+                //Skip if input has no references
                 if (aInput.Refs.Count == 0)
                     continue;
 
@@ -455,6 +460,7 @@ namespace JsonToCupl
             {
                 //For latches, we cannot support asynchronous clear or presets, make sure that
                 //if they exist, they are set to a constant 0, and just remove them
+				//TODO: Find a better place for this operation, or modify the yosys files to remove them from the json file
                 if (node.Type == NodeType.Latch)
                 {
                     List<PinConnection> removeCons = new List<PinConnection>();
@@ -465,10 +471,7 @@ namespace JsonToCupl
                             case "PRE":
                             case "CLR":
                                 Node refNode = con.Refs[0].Parent;
-                                if(refNode.Type != NodeType.Constant || refNode.Constant != 0)
-                                {
-                                    throw new NotSupportedException("Error, latch contains asynchronous clear or preset");
-                                }
+                                Assert(refNode.Type == NodeType.Constant && refNode.Constant == 0, "Error, latch contains asynchronous clear or preset");
                                 removeCons.Add(con);
                                 removeNodes.Add(refNode);
                                 break;
@@ -492,7 +495,7 @@ namespace JsonToCupl
         /// <param name="aInput">The input connection to the node we want to keep.  The node referencing the </param>
         static void RemoveAdjacentNode(PinConnection aInput)
         {
-            Trace.Assert(aInput.InputOrBidirectional, "Cannot remove adjacent node of output node");
+            Assert(aInput.InputOrBidirectional, "Cannot remove adjacent node of output node");
 
             Node a = aInput.Parent;
 
@@ -552,7 +555,7 @@ namespace JsonToCupl
             tr.Write($"Device {_config.Device};"); //Example: f1508ispplcc84
             tr.Write(ENDLINE);
             WriteGroupSeparator(tr);
-            string version = Assembly.GetAssembly(typeof(CodeGen)).GetName().Version.ToString();
+            string version = Assembly.GetAssembly(typeof(CodeGenCupl)).GetName().Version.ToString();
             tr.Write($"/* The following was auto-generated by JsonToCUPL {version} */");
         }
 
@@ -588,9 +591,11 @@ namespace JsonToCupl
             _visited.Clear();
             foreach (PinConnection con in _mod.Connections)
             {
-                if (!con.InputOrBidirectional) continue;
+                if (!con.InputOrBidirectional) 
+					continue;
                 PinConnection refToInput = con.Refs.FirstOrDefault(r => r.DirectionType == DirectionType.Output);
-                if (refToInput == null) continue;
+                if (refToInput == null)
+					continue;
                 string name = con.Name;
                 if (con.Parent.Type == NodeType.PinNode || con.Parent.Type == NodeType.Pin)
                 {
@@ -606,7 +611,6 @@ namespace JsonToCupl
                 _visited.Add(con.Parent);
 
                 StringBuilder sb = new StringBuilder();
-
                 sb.Append(name + " = ");
                 GenerateComboLogic(refToInput, sb);
                 sb.Append(";");
@@ -618,10 +622,15 @@ namespace JsonToCupl
             }
         }
 
+        /// <summary>
+        /// Recursively generates CUPL boolean expressions.  Walks though the node graph
+        /// </summary>
+        /// <param name="outputConnection">Current connection</param>
+        /// <param name="sb">Output code StringBuffer</param>
         void GenerateComboLogic(PinConnection outputConnection, StringBuilder sb)
         {
             bool skip = false;
-            Trace.Assert(outputConnection.OutputOrBidirectional,
+            Assert(outputConnection.OutputOrBidirectional,
                 "Invalid connection processing point, connection not output or bidirectional");
             Node parentNode = outputConnection.Parent;
             if (_visited.Contains(parentNode))
@@ -668,7 +677,9 @@ namespace JsonToCupl
                     continue;
                 if (con.Refs.Count == 0)
                     continue;
-                Trace.Assert(con.Refs.Count == 1, "Invalid input reference count at " + con.Name);
+                Assert(con.Refs.Count == 1, "Invalid input reference count at " + con.Name);
+
+                //Recurse the next connection reference
                 GenerateComboLogic(con.Refs[0], sb);
                 if (!didWriteOperator)
                 {
@@ -684,7 +695,7 @@ namespace JsonToCupl
                             sb.Append(" $ ");
                             break;
                         default:
-                            Trace.Assert(false, "Unknown combinational operator type '{parentNode.Type}'");
+                            Assert(false, $"Unknown combinational operator type '{parentNode.Type}'");
                             break;
                         case NodeType.Not:
                             break;
@@ -698,12 +709,7 @@ namespace JsonToCupl
 
         void AddPinNode(Node pinNode)
         {
-            if (pinNode == null)
-                throw new ArgumentNullException(nameof(pinNode));
-            if (pinNode.Type != NodeType.PinNode)
-                throw new ArgumentException();
-            if (_createdPinNodes.Contains(pinNode))
-                throw new ApplicationException($"Duplicate pinnode {pinNode.Name} added to created pinnode list");
+            Assert(!_createdPinNodes.Contains(pinNode), $"Duplicate pinnode {pinNode.Name} added to created pinnode list");
             _createdPinNodes.Add(pinNode);
         }
 
@@ -713,8 +719,8 @@ namespace JsonToCupl
         /// <param name="pin"></param>
         void AddPin(Node pin)
         {
-            Trace.Assert(pin.Type == NodeType.Pin, "Adding node that is not a Pin");
-            Trace.Assert(false == _createdPins.Contains(pin), "Pin node already added to pin collection");
+            Assert(pin.Type == NodeType.Pin, "Adding node that is not a Pin");
+            Assert(false == _createdPins.Contains(pin), "Pin node already added to pin collection");
             _createdPins.Add(pin);
         }
 
@@ -726,7 +732,7 @@ namespace JsonToCupl
         /// <param name="output"></param>
         static void UpdateReplacementNode(Node replaceNode, PinConnection output)
         {
-            Trace.Assert(output.OutputOrBidirectional, "Cannot Update a replacement node for a non output connection");
+            Assert(output.OutputOrBidirectional, "Cannot Update a replacement node for a non output connection");
 
             PinConnection replaceNodeOutput = replaceNode.Connections.GetOutput();
             if (replaceNodeOutput == null)

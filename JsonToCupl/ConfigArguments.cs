@@ -12,20 +12,42 @@ namespace JsonToCupl
 {
     class ConfigArguments : IConfig
     {
+        /// <summary>
+        /// WinCUPL pin file.  When generating the CUPL file, the PIN file will be used when assigning pin numbers.  Else, the pin numbers are left blank 
+        /// and its up WinCUPL to assign pins.
+        /// </summary>
         public const string ARG_PIN_FILE = "pinfile";
         public const string ARG_PIN_FILE_SHORT = "p";
 
+        /// <summary>
+        /// The target CUPL device (appears in the generated CUPL file)
+        /// </summary>
         public const string ARG_DEVICE = "device";
         public const string ARG_DEVICE_SHORT = "d";
 
+        /// <summary>
+        /// Help.  Its helpful
+        /// </summary>
         public const string ARG_HELP = "help";
         public const string ARG_HELP_SHORT = "h";
 
+        /// <summary>
+        /// ARG_INTER is only used for debugging, writes the intermediate results after certain CodeGen passes
+        /// </summary>
         public const string ARG_INTER = "inter";
         public const string ARG_INTER_SHORT = "i";
+
+        /// <summary>
+        /// Generate a yosys file.  This file can then be consumed by yosys to generate the json file.
+        /// </summary>
+        public const string ARG_GEN_YOSYS = "yosys";
+        public const string ARG_GEN_YOSYS_SHORT = "y";
+
+
         public string InFile { get; private set; }
         public string OutFile { get; private set; }
         public string Device { get; private set; }
+        public bool GenerateYosys { get; private set; }
 
         bool _populateInter = false;
         public string IntermediateOutFile1 { get; private set; }
@@ -36,12 +58,20 @@ namespace JsonToCupl
 
         public static void PrintHelp(TextWriter tr)
         {
-            tr.WriteLine("Usage: JsonToCupl [options] <infile> <outfile>");
+            tr.WriteLine("Yosys file generator: JsonToCupl [yosys_file_options] <infile> <outfile>");
+            tr.WriteLine("yosys_file_options:");
+            tr.WriteLine($"  -{ARG_GEN_YOSYS}");
+            tr.WriteLine($"      Generate a yosys file.  This file can then we executed by yosys to generate a compatible json file.");
+            tr.WriteLine("   <infile>");
+            tr.WriteLine("          Verilog file.");
+            tr.WriteLine("   <outfile>");
+            tr.WriteLine("          Json output file");
+            tr.WriteLine("CUPL Generator options: JsonToCupl [cupl_gen_options] <infile> <outfile>");
             tr.WriteLine("   <infile>");
             tr.WriteLine("          Json file from yosys");
             tr.WriteLine("   <outfile>");
             tr.WriteLine("          Output CUPL file");
-            tr.WriteLine("options:");
+            tr.WriteLine("cupl_gen_options:");
             tr.WriteLine($"  -{ARG_PIN_FILE} <filename>");
             tr.WriteLine("       Specifies a pin file.  If omitted, no pin numbers will be assigned to generated CUPL PIN declarations.");
             tr.WriteLine($"  -{ARG_DEVICE} <device_name>");
@@ -86,6 +116,10 @@ namespace JsonToCupl
                         case ARG_INTER_SHORT:
                         case ARG_INTER:
                             ret._populateInter = true;
+                            break;
+                        case ARG_GEN_YOSYS:
+                        case ARG_GEN_YOSYS_SHORT:
+                            ret.GenerateYosys = true;
                             break;
                         default:
                             CfgThrowHelper.InvalidArgName(key);

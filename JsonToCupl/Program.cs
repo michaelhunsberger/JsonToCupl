@@ -28,28 +28,18 @@ namespace JsonToCupl
                 Environment.Exit((int)ex.CodeCode);
             }
 
-
-            //Generate CUPL
-            CodeGen gen = null;
             try
             {
-                JModuleCollection modules = GetModules(config);
-                JModule mod = modules.First();
-                gen = new CodeGen(mod, config);
-                gen.GenerateBranchingNodes();
 
-                if (config.IntermediateOutFile1 != null)
+
+                if (config.GenerateYosys)
                 {
-                    WriteCuplCode(config.IntermediateOutFile1, gen);
+                    GenerateYosys(config);
                 }
-                gen.SimplifyConnections();
-
-                if (config.IntermediateOutFile2 != null)
+                else
                 {
-                    WriteCuplCode(config.IntermediateOutFile2, gen);
+                    GenerateCUPL(config);
                 }
-
-                gen.GenerateCollapseNodes();
             }
             catch (Exception ex)
             {
@@ -57,11 +47,44 @@ namespace JsonToCupl
                 Environment.Exit((int)ErrorCode.CodeGenerationError);
             }
 
-            //Write CUPL
+        }
+
+        static void GenerateYosys(IConfig config)
+        {
+            CodeGenYosys gen = new CodeGenYosys(config);
+            if (File.Exists(config.OutFile))
+                File.Delete(config.OutFile);
+            using (Stream fs = File.OpenWrite(config.OutFile))
+            {
+                using (StreamWriter sr = new StreamWriter(fs))
+                {
+                    gen.GenerateCode(sr);
+                    sr.Flush();
+                }
+            }
+        }
+
+        static void GenerateCUPL(IConfig config)
+        {
+            JModuleCollection modules = GetModules(config);
+            JModule mod = modules.First();
+            CodeGenCupl gen = new CodeGenCupl(mod, config);
+            gen.GenerateBranchingNodes();
+            if (config.IntermediateOutFile1 != null)
+            {
+                WriteCuplCode(config.IntermediateOutFile1, gen);
+            }
+            gen.SimplifyConnections();
+            if (config.IntermediateOutFile2 != null)
+            {
+                WriteCuplCode(config.IntermediateOutFile2, gen);
+            }
+
+            gen.GenerateCollapseNodes();
             WriteCuplCode(config.OutFile, gen);
         }
 
-        static void WriteCuplCode(string outFile, CodeGen gen)
+        static void WriteCuplCode(string outFile, CodeGenCupl gen)
         {
             if (File.Exists(outFile))
                 File.Delete(outFile);
@@ -69,7 +92,7 @@ namespace JsonToCupl
             {
                 using (StreamWriter sr = new StreamWriter(fs))
                 {
-                    gen.WriteCUPL(sr);
+                    gen.GenerateCode(sr);
                     sr.Flush();
                 }
             }

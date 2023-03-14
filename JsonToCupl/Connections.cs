@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace JsonToCupl
 {
+
     class Connections : List<PinConnection>
     {
         public PinConnection GetOutput()

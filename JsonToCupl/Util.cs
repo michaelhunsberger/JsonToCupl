@@ -7,6 +7,11 @@ namespace JsonToCupl
     static class Util
     {
         static int _cnt = 0;
+
+        /// <summary>
+        /// Generate a unique a name
+        /// </summary>
+        /// <returns></returns>
         public static string GenerateName()
         {
             int id = Interlocked.Increment(ref _cnt);
@@ -14,6 +19,12 @@ namespace JsonToCupl
             return ret;
         }
 
+        /// <summary>
+        /// Generates an indexed name identifier 
+        /// </summary>
+        /// <param name="baseName"></param>
+        /// <param name="ix"></param>
+        /// <returns></returns>
         public static string GenerateName(string baseName, int ix)
         {
             return string.Concat(baseName, ix.ToString());

@@ -27,6 +27,11 @@ namespace JsonToCupl
         MergeTBUF = (1 << 1),
     }
 
+    /// <summary>
+    /// TODO: In hindsight, I think another design would have been better.  Instead of representing the node graph like this, 
+    /// a better way would have been a Graph class with a dictionary inConnection\outConnection style data structure.
+    /// The graph is a multigraph/bidirectional graph.  This gets the job done though.
+    /// </summary>
     class Node
     {
         public Node(string name, NodeType type, int constant = 0)

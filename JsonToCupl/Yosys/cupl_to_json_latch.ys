@@ -1,4 +1,4 @@
-read_verilog C:\Users\mjhun\Code\HDLProjects\Glue68K_New\Glue68K.v
+read_verilog C:\Users\mjhun\Code\HDLProjects\Latch\latch.v
 hierarchy
 proc
 flatten
@@ -11,4 +11,4 @@ abc -g AND,XOR
 clean
 dfflibmap -liberty cupl_dff.lib
 opt
-write_json C:\Users\mjhun\Code\HDLProjects\Glue68K_New\Glue68K.json
+write_json C:\Users\mjhun\Code\HDLProjects\Latch\latch.json
