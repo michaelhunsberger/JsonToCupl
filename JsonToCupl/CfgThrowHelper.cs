@@ -1,4 +1,6 @@
-﻿namespace JsonToCupl
+﻿using System;
+
+namespace JsonToCupl
 {
     static class CfgThrowHelper
     {
@@ -27,14 +29,9 @@
             throw new ConfigException($"Invalid argument '{key}'", ErrorCode.InvalidArgumentName);
         }
 
-        public static void InvalidArgs()
+        public static void InvalidNumberOfArguments(string extraMsg)
         {
-            throw new ConfigException("Missing or invalid number of arguments", ErrorCode.MissingArguments);
-        }
-
-        public static void InvalidNumberOfArguments()
-        {
-            throw new ConfigException("Invalid number of arguments", ErrorCode.InvalidNumberOfArguments);
+            throw new ConfigException($"Invalid number of arguments. {extraMsg}", ErrorCode.InvalidNumberOfArguments);
         }
 
         public static void DuplicatePinName(string pinName)
@@ -45,6 +42,11 @@
         public static void InvalidPin(string sPinNum)
         {
             throw new ConfigException($"Cannot parse pin number '{sPinNum}'", ErrorCode.PinNumberParseError);
+        }
+
+        public static void AmbiguousOrModuleNotFound()
+        {
+            throw new ConfigException("Ambiguous number of modules or module not found", ErrorCode.AmbiguousOrModuleNotFound);
         }
     }
 }

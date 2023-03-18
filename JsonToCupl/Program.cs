@@ -12,14 +12,26 @@ namespace JsonToCupl
     {
         static void Main(string[] args)
         {
-            IConfig config = null;
+            ConfigArguments config = new ConfigArguments(args);
+ 
             try
             {
-                config = ConfigArguments.BuildFromArgs(args);
-                if (config == null)
+                config.BuildFromArgs();
+                if (config.Action == CodeGenAction.None)
                 {
                     ConfigArguments.PrintHelp(Console.Out);
                     Environment.Exit(0);
+                }
+                switch (config.Action)
+                {
+                    case CodeGenAction.WinCupl:
+                        GenerateCUPL(config);
+                        break;
+                    case CodeGenAction.Yosys:
+                        GenerateYosys(config);
+                        break;
+                    default:
+                        throw new NotImplementedException();
                 }
             }
             catch (ConfigException ex)
@@ -27,26 +39,11 @@ namespace JsonToCupl
                 Console.WriteLine(ex.Message);
                 Environment.Exit((int)ex.CodeCode);
             }
-
-            try
-            {
-
-
-                if (config.GenerateYosys)
-                {
-                    GenerateYosys(config);
-                }
-                else
-                {
-                    GenerateCUPL(config);
-                }
-            }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
                 Environment.Exit((int)ErrorCode.CodeGenerationError);
             }
-
         }
 
         static void GenerateYosys(IConfig config)
@@ -65,9 +62,26 @@ namespace JsonToCupl
         }
 
         static void GenerateCUPL(IConfig config)
-        {
+        { 
             JModuleCollection modules = GetModules(config);
-            JModule mod = modules.First();
+            JModule mod = null;
+            if (config.ModuleName != null)
+                mod = modules.First(x => x.Name.Equals(config.ModuleName));
+
+            int numOfModules = modules.Count();
+            if (mod == null)
+            {
+                if (numOfModules > 1)
+                {
+                    CfgThrowHelper.AmbiguousOrModuleNotFound();
+                }
+                else
+                {
+                    mod = modules.First();
+                }
+            }
+
+          
             CodeGenCupl gen = new CodeGenCupl(mod, config);
             gen.GenerateBranchingNodes();
             if (config.IntermediateOutFile1 != null)
@@ -81,7 +95,13 @@ namespace JsonToCupl
             }
 
             gen.GenerateCollapseNodes();
-            WriteCuplCode(config.OutFile, gen);
+
+            string outFile = config.OutFile;
+            if (outFile == null)
+            {
+                outFile = mod.Name + ".PLD";
+            }
+            WriteCuplCode(outFile, gen);
         }
 
         static void WriteCuplCode(string outFile, CodeGenCupl gen)
@@ -103,21 +123,18 @@ namespace JsonToCupl
             JModuleCollection modules = null;
             try
             {
-                modules = GetModules(config.InFile);
+                if(config.InFiles.Length > 1)
+                {
+                    CfgThrowHelper.InvalidNumberOfArguments("More than one json file specified.");
+                }
+                modules = GetModules(config.InFiles.First());
             }
             catch (JTCParseExeption e)
             {
                 Console.WriteLine(e.Message);
                 Environment.Exit((int)ErrorCode.InvalidJsonFile);
             }
-
-            int numOfModules = modules.Count();
-            if (numOfModules != 1)
-            {
-                Console.WriteLine("Invalid number of modules");
-                Environment.Exit((int)ErrorCode.InvalidJsonFile);
-            }
-
+             
             return modules;
         }
 

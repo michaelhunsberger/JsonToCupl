@@ -34,7 +34,10 @@ namespace JsonToCupl
             string exeDir = Path.GetDirectoryName(currentPath);
             string pathToCuplLatchMap = Path.Combine(exeDir, "Yosys", "cupl_cells_latch.v");
             string pathToDFFLib = Path.Combine(exeDir, "Yosys", "cupl_dff.lib");
-            tr.WriteLine($"read_verilog {_config.InFile}");
+            foreach (string inFile in _config.InFiles)
+            {
+                tr.WriteLine($"read_verilog {inFile}");
+            }
             tr.WriteLine($"hierarchy");
             tr.WriteLine($"proc");
             tr.WriteLine($"flatten");
@@ -47,7 +50,8 @@ namespace JsonToCupl
             tr.WriteLine($"clean");
             tr.WriteLine($"dfflibmap -liberty {pathToDFFLib}");
             tr.WriteLine($"opt");
-            tr.WriteLine($"write_json {_config.OutFile}");
+            string jsonFileName = Path.GetFileNameWithoutExtension(_config.OutFile) + ".json";
+            tr.WriteLine($"write_json {jsonFileName}");
         }
     }
 }

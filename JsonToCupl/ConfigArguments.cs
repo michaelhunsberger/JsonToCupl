@@ -43,11 +43,21 @@ namespace JsonToCupl
         public const string ARG_GEN_YOSYS = "yosys";
         public const string ARG_GEN_YOSYS_SHORT = "y";
 
+        public const string ARG_GEN_MODULE = "module";
+        public const string ARG_GEN_MODULE_SHORT = "m";
 
-        public string InFile { get; private set; }
+        /// <summary>
+        /// Used to specify the input file(s).  If more than one, argument must be comma delimiated
+        /// </summary>
+        public const string ARG_GEN_IN = "in";
+
+        /// <summary>
+        /// Used to specify the output file.
+        /// </summary>
+        public const string ARG_GEN_OUT = "out";
+        public string[] InFiles { get; private set; }
         public string OutFile { get; private set; }
         public string Device { get; private set; }
-        public bool GenerateYosys { get; private set; }
 
         bool _populateInter = false;
         public string IntermediateOutFile1 { get; private set; }
@@ -56,9 +66,21 @@ namespace JsonToCupl
         string _pinFile;
         public IPins PinNums { get; private set; } = Pins.Empty;
 
+        public CodeGenAction Action { get; private set; } = CodeGenAction.None;
+
+        public string ModuleName { get; private set; }
+
+        int _ix;
+        readonly string[] _args;
+
+        public ConfigArguments(string[] args)
+        {
+            _args = args;
+        }
+
         public static void PrintHelp(TextWriter tr)
         {
-            tr.WriteLine("Yosys file generator: JsonToCupl [yosys_file_options] <infile> <outfile>");
+            tr.WriteLine("Yosys file generator: JsonToCupl [yosys_file_options] -in <infile> -out <outfile>");
             tr.WriteLine("yosys_file_options:");
             tr.WriteLine($"  -{ARG_GEN_YOSYS}");
             tr.WriteLine($"      Generate a yosys file.  This file can then we executed by yosys to generate a compatible json file.");
@@ -66,7 +88,7 @@ namespace JsonToCupl
             tr.WriteLine("          Verilog file.");
             tr.WriteLine("   <outfile>");
             tr.WriteLine("          Json output file");
-            tr.WriteLine("CUPL Generator options: JsonToCupl [cupl_gen_options] <infile> <outfile>");
+            tr.WriteLine("CUPL Generator options: JsonToCupl [cupl_gen_options] -in <infile> -out <outfile>");
             tr.WriteLine("   <infile>");
             tr.WriteLine("          Json file from yosys");
             tr.WriteLine("   <outfile>");
@@ -76,99 +98,163 @@ namespace JsonToCupl
             tr.WriteLine("       Specifies a pin file.  If omitted, no pin numbers will be assigned to generated CUPL PIN declarations.");
             tr.WriteLine($"  -{ARG_DEVICE} <device_name>");
             tr.WriteLine("       Specifies a device name.  If omitted, device name defaults to 'virtual'");
+            tr.WriteLine($"  -{ARG_GEN_MODULE} <module_name>");
+            tr.WriteLine("       The module within the json file to process.  If more than one module is defined, this option is required.");
+            tr.WriteLine("");
         }
+
+
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="args"></param>
-        /// <returns>Returns null if no arguments specified</returns>
-        public static ConfigArguments BuildFromArgs(string[] args)
+        /// <returns>Returns false if no arguments specified</returns>
+        public void BuildFromArgs()
         {
-            ConfigArguments ret = new ConfigArguments();
-            if (args.Length == 0)
-                return null; //No arguments
+            if (_args.Length == 0)
+            {
+                return;
+            }
+            if (_args.Length == 1 && string.Equals(_args[0].TrimStart('-'), ARG_HELP, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
 
-            if (args.Length == 1 && string.Equals(args[0].TrimStart('-'), ARG_HELP, StringComparison.OrdinalIgnoreCase))
+            //Default behavior, generate WinCupl 
+            Action = CodeGenAction.WinCupl;
+
+            while (!IsEnd)
+            {
+                string key = ReadTok().ToLowerInvariant();
+                if (!key.StartsWith("-"))
+                    CfgThrowHelper.InvalidArgName(key);
+                key = key.Substring(1, key.Length - 1);
+                ReadCodeGenOpt(key);
+            }
+
+            if (_populateInter && !string.IsNullOrEmpty(OutFile))
+            {
+                IntermediateOutFile1 = Path.Combine(Path.GetDirectoryName(OutFile),
+                    Path.GetFileNameWithoutExtension(OutFile) + ".it1");
+                IntermediateOutFile2 = Path.Combine(Path.GetDirectoryName(OutFile),
+                    Path.GetFileNameWithoutExtension(OutFile) + ".it2");
+            }
+
+            Check();
+        }
+
+        void ReadCodeGenOpt(string key)
+        {
+            switch (key)
+            {
+                case ARG_PIN_FILE_SHORT:
+                case ARG_PIN_FILE:
+                    _pinFile = ReadRequired("Missing pin file name.");
+                    break;
+                case ARG_DEVICE_SHORT:
+                case ARG_DEVICE:
+                    Device = ReadRequired("Missing device name.");
+                    break;
+                case ARG_INTER_SHORT:
+                case ARG_INTER:
+                    _populateInter = true;
+                    break;
+                case ARG_GEN_YOSYS:
+                case ARG_GEN_YOSYS_SHORT:
+                    Action = CodeGenAction.Yosys;
+                    break;
+                case ARG_GEN_IN:
+                    InFiles = ReadFiles();
+                    if(InFiles.Length == 0)
+                    {
+                        CfgThrowHelper.MissingInputFile();
+                    }
+                    break;
+                case ARG_GEN_MODULE:
+                case ARG_GEN_MODULE_SHORT:
+                    ModuleName = ReadRequired("Missing module name.");
+                    break;
+                case ARG_GEN_OUT:
+                    OutFile = ReadRequired("Missing output file name.");
+                    break;
+                default:
+                    CfgThrowHelper.InvalidArgName(key);
+                    break;
+            }
+        }
+
+        string[] ReadFiles()
+        {
+            List<string> ret = new List<string>();
+            int ix;
+            for(ix = _ix; ix < _args.Length; ix++)
+            {
+                string file = Peek(ix);
+                if (file.StartsWith("-"))
+                    break;
+                ret.Add(file);
+            }
+            _ix =  ix;
+            return ret.ToArray();
+        }
+
+        string ReadTok()
+        {
+            if (IsEnd)
                 return null;
+            return _args[_ix++];
+        }
 
-            int ix = 0;
-            ret._pinFile = null;
+        string Peek(int ix)
+        {
+            if (ix < _args.Length)
+                return _args[ix];
+            else
+                return null;
+        }
 
-            try
+        string ReadRequired(string errorMessage)
+        {
+            string ret = ReadTok();
+            if (ret == null)
             {
-                while (ix < args.Length - 2)
-                {
-                    string key = args[ix++].ToLowerInvariant();
-                    if (!key.StartsWith("-"))
-                        CfgThrowHelper.InvalidArgName(key);
-                    key = key.Trim('-');
-                    switch (key)
-                    {
-                        case ARG_PIN_FILE_SHORT:
-                        case ARG_PIN_FILE:
-                            ret._pinFile = args[ix++];
-                            break;
-                        case ARG_DEVICE_SHORT:
-                        case ARG_DEVICE:
-                            ret.Device = args[ix++];
-                            break;
-                        case ARG_INTER_SHORT:
-                        case ARG_INTER:
-                            ret._populateInter = true;
-                            break;
-                        case ARG_GEN_YOSYS:
-                        case ARG_GEN_YOSYS_SHORT:
-                            ret.GenerateYosys = true;
-                            break;
-                        default:
-                            CfgThrowHelper.InvalidArgName(key);
-                            break;
-                    }
-                }
-
-                ret.InFile = args[ix++];
-                ret.OutFile = args[ix];
-
-                if (ret._populateInter)
-                {
-                    ret.IntermediateOutFile1 = Path.Combine(Path.GetDirectoryName(ret.OutFile),
-                        Path.GetFileNameWithoutExtension(ret.OutFile) + ".it1");
-                    ret.IntermediateOutFile2 = Path.Combine(Path.GetDirectoryName(ret.OutFile),
-                        Path.GetFileNameWithoutExtension(ret.OutFile) + ".it2");
-                }
+                CfgThrowHelper.InvalidNumberOfArguments(errorMessage);
             }
-            catch (IndexOutOfRangeException)
-            {
-                CfgThrowHelper.InvalidNumberOfArguments();
-            }
-            Check(ret);
-            if (!string.IsNullOrEmpty(ret._pinFile))
-            {
-                using (Stream fs = File.OpenRead(ret._pinFile))
-                {
-                    using (TextReader tr = new StreamReader(fs))
-                    {
-                        ret.PinNums = Pins.Build(tr);
-                    }
-                }
-            }
-
             return ret;
         }
 
-        static void Check(ConfigArguments configArguments)
+        bool IsEnd
         {
-            if (string.IsNullOrWhiteSpace(configArguments.InFile))
-                CfgThrowHelper.MissingInputFile();
-            if (string.IsNullOrWhiteSpace(configArguments.OutFile))
-                CfgThrowHelper.MissingOutputFile();
-            if (!File.Exists(configArguments.InFile))
-                CfgThrowHelper.InputFileNotFound(configArguments.InFile);
-            if (!string.IsNullOrWhiteSpace(configArguments._pinFile))
+            get { return _ix >= _args.Length ? true : false; }
+        }
+
+        void Check()
+        {
+            if (InFiles == null || InFiles.Length == 0)
             {
-                if (!File.Exists(configArguments._pinFile))
-                    CfgThrowHelper.PinFileNotFound(configArguments._pinFile);
+                CfgThrowHelper.MissingInputFile();
+            }
+            foreach(var inFile in InFiles)
+            {
+                if (string.IsNullOrWhiteSpace(inFile))
+                    CfgThrowHelper.MissingInputFile();
+                if (!File.Exists(inFile))
+                    CfgThrowHelper.InputFileNotFound(inFile);
+            }
+
+            if (string.IsNullOrWhiteSpace(OutFile))
+            {
+                string firstInFile = InFiles.First();
+                if(Action == CodeGenAction.Yosys)
+                {
+                    OutFile = Path.GetFileNameWithoutExtension(firstInFile) + ".ys";
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(_pinFile))
+            {
+                if (!File.Exists(_pinFile))
+                    CfgThrowHelper.PinFileNotFound(_pinFile);
             }
         }
     }

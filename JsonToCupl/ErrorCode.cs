@@ -12,6 +12,7 @@
         DuplicatePinName,
         CodeGenerationError,
         InvalidJsonFile,
-        PinNumberParseError
+        PinNumberParseError,
+        AmbiguousOrModuleNotFound
     }
 }
