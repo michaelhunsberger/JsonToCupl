@@ -93,9 +93,9 @@ namespace JsonToCupl
             {
                 WriteCuplCode(config.IntermediateOutFile2, gen);
             }
-
             gen.GenerateCollapseNodes();
-
+            gen.CalculateComplexity();
+            gen.ExpandCombinationalPinNodes();
             string outFile = config.OutFile;
             if (outFile == null)
             {

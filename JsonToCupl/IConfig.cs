@@ -55,5 +55,10 @@ namespace JsonToCupl
         /// If more than one module is defined, we need to know the target module
         /// </summary>
         string ModuleName { get; }
+
+        /// <summary>
+        /// When set, purely combinational PinNodes will be restricted to this value
+        /// </summary>
+        int? LimitCombinationalPinNodes { get; }
     }
 }

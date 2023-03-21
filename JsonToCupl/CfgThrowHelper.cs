@@ -29,6 +29,10 @@ namespace JsonToCupl
             throw new ConfigException($"Invalid argument '{key}'", ErrorCode.InvalidArgumentName);
         }
 
+        public static void InvalidArgumentValue(string extraMsg)
+        {
+            throw new ConfigException($"Invalid argument value. {extraMsg}", ErrorCode.InvalidArgumentValue);
+        }
         public static void InvalidNumberOfArguments(string extraMsg)
         {
             throw new ConfigException($"Invalid number of arguments. {extraMsg}", ErrorCode.InvalidNumberOfArguments);

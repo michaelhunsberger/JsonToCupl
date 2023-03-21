@@ -108,7 +108,7 @@ namespace JsonToCupl
                 AddPin(pin);
             }
         }
-		
+
         /// <summary>
         /// Loops though created pins and pinNodes and adds a connection within the module, this way it can become traversable during code generation
         /// TODO: The code generator is using this function too much.  We should only do this when a pin or pinnode is created, and we could perform a
@@ -122,6 +122,15 @@ namespace JsonToCupl
                 CheckNode(cell);
                 AddInputsToModuleConnection(cell);
             }
+
+            //Delete pinNodes that have no output references
+            _createdPinNodes.RemoveWhere(x => {
+                PinConnection outCon = x.Connections.GetOutput();
+                if (outCon == null || outCon.Refs.Count == 0)
+                    return true;
+                else
+                    return false;
+            });
             foreach (Node cell in _createdPinNodes)
             {
                 CheckNode(cell);
@@ -223,14 +232,14 @@ namespace JsonToCupl
             foreach (Node node in _mod.Cells.Where(c => c.Type.IsDFFOrLatch()))
             {
                 PinConnection output = node.Connections.GetOutput();
-                if (output.Refs.Count == 0) 
+                if (output.Refs.Count == 0)
                     continue;
 
                 Node mergeTo = GetMergeToTarget(output);
 
                 PinConnection mergeToInput;
                 //If mergeTo already is a DFF, do not merge, create another PinNode
-                if ((mergeTo.NodeProcessState & NodeProcessState.MergeDFF) != 0)
+                if ((mergeTo.NodeProcessState & NodeProcessState.MergeRegister) != 0)
                 {
                     mergeTo = CreatePinNodeForOutput(output);
                     AddPinNode(mergeTo);
@@ -274,7 +283,7 @@ namespace JsonToCupl
                 //All values that referenced the DFF's output need to be changed to the mergeTo's output connection
                 UpdateReplacementNode(mergeTo, output);
 
-                mergeTo.NodeProcessState |= NodeProcessState.MergeTBUF;
+                mergeTo.NodeProcessState |= NodeProcessState.MergeRegister;
 
                 //DFF's output and connections should no longer be referenced
                 output.Refs.Clear();
@@ -347,7 +356,7 @@ namespace JsonToCupl
             }
         }
 
-     
+
 
         /// <summary>
         /// Recursively walks though all input connections of a node
@@ -460,13 +469,13 @@ namespace JsonToCupl
             {
                 //For latches, we cannot support asynchronous clear or presets, make sure that
                 //if they exist, they are set to a constant 0, and just remove them
-				//TODO: Find a better place for this operation, or modify the yosys files to remove them from the json file
+                //TODO: Find a better place for this operation, or modify the yosys files to remove them from the json file
                 if (node.Type == NodeType.Latch)
                 {
                     List<PinConnection> removeCons = new List<PinConnection>();
-                    foreach(PinConnection con in node.Connections.GetInputs())
+                    foreach (PinConnection con in node.Connections.GetInputs())
                     {
-                        switch(con.Name)
+                        switch (con.Name)
                         {
                             case "PRE":
                             case "CLR":
@@ -477,7 +486,7 @@ namespace JsonToCupl
                                 break;
                         }
                     }
-                    foreach(PinConnection con in removeCons)
+                    foreach (PinConnection con in removeCons)
                     {
                         node.Connections.Remove(con);
                     }
@@ -533,6 +542,150 @@ namespace JsonToCupl
             //Clear all connections of b (its gone now, b's inputs was copyied into a)
             b.Connections.Clear();
         }
+
+
+        public void ExpandCombinationalPinNodes()
+        {
+            if (_config.LimitCombinationalPinNodes == null || _config.LimitCombinationalPinNodes < 0)
+            {
+                return;
+            }
+            int limitCombo = _config.LimitCombinationalPinNodes.Value;
+            var comboPinNodes = _createdPinNodes.Where(x => x.NodeProcessState == NodeProcessState.None).ToArray();
+            if (comboPinNodes.Length < limitCombo)
+            {
+                return;
+            }
+
+            Array.Sort(comboPinNodes, (x, y) => { return y.OutputComplexity.CompareTo(x.OutputComplexity); });
+            Node[] removePinNodes = comboPinNodes.Take(Math.Max(comboPinNodes.Length - limitCombo, 0)).ToArray();
+            foreach(Node pinNode in removePinNodes)
+            { 
+                _createdPinNodes.Remove(pinNode);
+
+                PinConnection inputToPinNode = pinNode.Connections.GetInputs().First();
+                PinConnection expressionOutput = inputToPinNode.Refs[0];
+                PinConnection outputPinNode = pinNode.Connections.GetOutput();
+
+                List<Node> combinNodes = new List<Node>();
+                List<Node> _ = new List<Node>();
+                ScanExpressionNodes(expressionOutput, combinNodes, _, false);
+
+
+                foreach (PinConnection targetConInput in outputPinNode.Refs)
+                {
+                    //If the input is part of a feedback expression, then skip duplication
+                    if (combinNodes.Contains(targetConInput.Parent))
+                        continue;
+                    List<Node> nodesOld = new List<Node>();
+                    List<Node> nodesNew = new List<Node>();
+                    ScanExpressionNodes(expressionOutput, nodesOld, nodesNew, true);
+                    //We are trying to build the connection references (using the equivalent oldNode as a reference).
+                    foreach (Node dup in nodesNew)
+                    {
+                        //Find matching old node
+                        Node oldNode = nodesOld.Where(x => x.Name == dup.Name).First();
+
+                        //Loop though each input of the old node
+                        foreach(PinConnection inputConOld in oldNode.Connections.GetInputs())
+                        {
+                            //Input to new node 
+                            PinConnection inputConNew = dup.Connections.GetInputs().First(x => x.Name == inputConOld.Name);
+
+                            //Old output ref
+                            PinConnection outConOld = inputConOld.Refs[0];
+
+                            //Old output node
+                            Node outNodeOld = outConOld.Parent;
+
+                            //Attempt to find the corresponding output node (for inputConNew) within newNodes
+                            Node foundOutNode = nodesNew.FirstOrDefault(x => x.Name == outNodeOld.Name);
+
+                            PinConnection outRef = null;
+                            
+                            //found output ref node is not within duplicated node list (it is not an output of the cloned combinational logic), it is external
+                            if (foundOutNode  == null)
+                            {
+                                //This is the pinnode, we are eliminating the pinnode.  targetConInput is the reference input connection to the pinnodes output, so its parent node output is what we need
+                                //for the inputConNews reference
+                                if (outNodeOld == pinNode)
+                                {
+                                    //TODO: Not sure it needs to be a bidirectional, this would be tri-state value within buried combinational logic
+                                    outRef = targetConInput.Parent.Connections.GetOutputOrBidirectional();
+                                }
+                                else
+                                {
+                                    //TODO: Not sure it needs to be a bidirectional, this would be tri-state value within buried combinational logic
+                                    outRef = outNodeOld.Connections.GetOutputOrBidirectional();  
+                                }
+                            }
+                            else
+                            {
+                                outRef = foundOutNode.Connections.GetOutput(); //No way its bidirectional
+                            }
+                            inputConNew.Refs.Add(outRef);
+                            outRef.Refs.Add(inputConNew);
+                        } 
+                    }
+                }
+            }
+            
+            foreach(Node remove in removePinNodes)
+            {
+                foreach(PinConnection con in remove.Connections)
+                {
+                    foreach(PinConnection conRef in con.Refs)
+                    {
+                        conRef.Parent.Connections.Remove(con);
+                    }
+                }
+                remove.Connections.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Scans an output connectino 
+        /// </summary>
+        /// <param name="outputConnection"></param>
+        /// <param name="foundNodes"></param>
+        /// <param name="dupNodes"></param>
+        /// <param name="duplicate"></param>
+        void ScanExpressionNodes(PinConnection outputConnection, List<Node> foundNodes, List<Node> dupNodes, bool duplicate)
+        {
+            Assert(outputConnection.OutputOrBidirectional, "Attempting to scan or duplicate with a non output connection");
+            Node old = outputConnection.Parent;
+            switch (old.Type)
+            {
+                case NodeType.Latch:
+                case NodeType.DFF:
+                case NodeType.TBUF:
+                case NodeType.Pin:
+                case NodeType.PinNode:
+                case NodeType.Module:
+                    return;
+            }
+            foundNodes.Add(old);
+            if (duplicate)
+            {
+                Node dup = new Node(old.Name, old.Type, old.Constant);
+                dup.Complexity = old.Complexity;
+                dup.NodeProcessState = old.NodeProcessState;
+                dupNodes.Add(dup);
+                foreach (PinConnection oldConnection in old.Connections)
+                {
+                    dup.Connections.Add(new PinConnection(dup, oldConnection.Name, oldConnection.DirectionType));
+                }
+            }
+            foreach (var inputCon in old.Connections.GetInputs())
+            {
+                if (inputCon.Refs.Count == 0)
+                {
+                    continue;
+                }
+                ScanExpressionNodes(inputCon.Refs.First(), foundNodes, dupNodes, duplicate);
+            }
+        }
+
 
         void WriteHeader(TextWriter tr)
         {
@@ -591,11 +744,11 @@ namespace JsonToCupl
             _visited.Clear();
             foreach (PinConnection con in _mod.Connections)
             {
-                if (!con.InputOrBidirectional) 
-					continue;
+                if (!con.InputOrBidirectional)
+                    continue;
                 PinConnection refToInput = con.Refs.FirstOrDefault(r => r.DirectionType == DirectionType.Output);
                 if (refToInput == null)
-					continue;
+                    continue;
                 string name = con.Name;
                 if (con.Parent.Type == NodeType.PinNode || con.Parent.Type == NodeType.Pin)
                 {
@@ -609,7 +762,6 @@ namespace JsonToCupl
                     name = con.Parent.Name + "." + con.Name;
                 }
                 _visited.Add(con.Parent);
-
                 StringBuilder sb = new StringBuilder();
                 sb.Append(name + " = ");
                 GenerateComboLogic(refToInput, sb);
@@ -618,8 +770,24 @@ namespace JsonToCupl
                 //WinCupl is old, so just assume it has some issues with lines that are too long.
                 tr.Write(code);
                 tr.Write(ENDLINE);
-                Console.WriteLine(code);
             }
+        }
+
+        public int CalculateComplexity()
+        {
+            int ret = 0;
+            _visited.Clear();
+            foreach (PinConnection con in _mod.Connections)
+            {
+                if (!con.InputOrBidirectional)
+                    continue;
+                PinConnection refToInput = con.Refs.FirstOrDefault(r => r.DirectionType == DirectionType.Output);
+                if (refToInput == null)
+                    continue;
+                _visited.Add(con.Parent);
+                ret += con.Parent.Complexity = PopulateOutputComplexity(refToInput);
+            }
+            return ret;
         }
 
         /// <summary>
@@ -707,6 +875,60 @@ namespace JsonToCupl
             sb.Append(" )");
         }
 
+        /// <summary>
+        /// Recurses though an output connection and returns its complexity
+        /// </summary>
+        /// <param name="outputConnection"></param>
+        /// <returns></returns>
+        int PopulateOutputComplexity(PinConnection outputConnection)
+        {
+            int ret = 1;
+            Assert(outputConnection.OutputOrBidirectional,
+                "Invalid connection processing point, connection not output or bidirectional");
+            Node parentNode = outputConnection.Parent;
+            bool skip = SkipRecurse(parentNode);
+            if (skip)
+            {
+                return ret;
+            }
+            foreach (PinConnection con in parentNode.Connections)
+            {
+                if (!con.InputOrBidirectional)
+                    continue;
+                if (con.Refs.Count == 0)
+                    continue;
+                Assert(con.Refs.Count == 1, "Invalid input reference count at " + con.Name);
+                //Recurse the next connection reference
+                ret += PopulateOutputComplexity(con.Refs[0]);
+            }
+            parentNode.Complexity = ret;
+            return ret;
+        }
+
+        bool SkipRecurse(Node parentNode)
+        {
+            bool skip = false;
+            if (_visited.Contains(parentNode))
+            {
+                skip = true;
+            }
+            _visited.Add(parentNode);
+            switch (parentNode.Type)
+            {
+                case NodeType.Latch:
+                case NodeType.DFF:
+                case NodeType.TBUF:
+                case NodeType.Pin:
+                case NodeType.PinNode:
+                case NodeType.Module:
+                case NodeType.Constant:
+                    skip = true;
+                    break;
+            }
+
+            return skip;
+        }
+
         void AddPinNode(Node pinNode)
         {
             Assert(!_createdPinNodes.Contains(pinNode), $"Duplicate pinnode {pinNode.Name} added to created pinnode list");
@@ -725,7 +947,7 @@ namespace JsonToCupl
         }
 
         /// <summary>
-        /// For a given output connection, look for all referenced input connections and move them into the referene of the replaceNode's output connection
+        /// For a given output connection, look for all referenced input connections and move them into the reference of the replaceNode's output connection
         /// 
         /// </summary>
         /// <param name="replaceNode"></param>

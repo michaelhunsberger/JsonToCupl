@@ -13,6 +13,7 @@
         CodeGenerationError,
         InvalidJsonFile,
         PinNumberParseError,
-        AmbiguousOrModuleNotFound
+        AmbiguousOrModuleNotFound,
+        InvalidArgumentValue
     }
 }

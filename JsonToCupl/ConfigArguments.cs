@@ -46,6 +46,9 @@ namespace JsonToCupl
         public const string ARG_GEN_MODULE = "module";
         public const string ARG_GEN_MODULE_SHORT = "m";
 
+        public const string ARG_GEN_COMBIN_LIMIT = "combinlimit";
+        public const string ARG_GEN_COMBIN_LIMIT_SHORT = "c";
+
         /// <summary>
         /// Used to specify the input file(s).  If more than one, argument must be comma delimiated
         /// </summary>
@@ -69,6 +72,7 @@ namespace JsonToCupl
         public CodeGenAction Action { get; private set; } = CodeGenAction.None;
 
         public string ModuleName { get; private set; }
+         
 
         int _ix;
         readonly string[] _args;
@@ -100,6 +104,8 @@ namespace JsonToCupl
             tr.WriteLine("       Specifies a device name.  If omitted, device name defaults to 'virtual'");
             tr.WriteLine($"  -{ARG_GEN_MODULE} <module_name>");
             tr.WriteLine("       The module within the json file to process.  If more than one module is defined, this option is required.");
+            tr.WriteLine($"  -{ARG_GEN_COMBIN_LIMIT} <integer>");
+            tr.WriteLine("       Limits number of buried combinational pinnodes.  If limit is reached, then the required number of pinnodes will be substituted with combinational expressions.  Pinnodes are chosen for expansion based on the least amount of added newly created nodes in the expression graph.");
             tr.WriteLine("");
         }
 
@@ -175,6 +181,16 @@ namespace JsonToCupl
                 case ARG_GEN_MODULE_SHORT:
                     ModuleName = ReadRequired("Missing module name.");
                     break;
+                case ARG_GEN_COMBIN_LIMIT:
+                case ARG_GEN_COMBIN_LIMIT_SHORT:
+                    string sCL = ReadRequired("Missing pinnode combinational limit value");
+                    int icl;
+                    if(!int.TryParse(sCL, out icl))
+                    {
+                        CfgThrowHelper.InvalidArgumentValue("Combinational limit not a integer");
+                    }
+                    LimitCombinationalPinNodes = icl;
+                    break;
                 case ARG_GEN_OUT:
                     OutFile = ReadRequired("Missing output file name.");
                     break;
@@ -228,6 +244,8 @@ namespace JsonToCupl
         {
             get { return _ix >= _args.Length ? true : false; }
         }
+
+        public int? LimitCombinationalPinNodes { get; private set; }
 
         void Check()
         {
