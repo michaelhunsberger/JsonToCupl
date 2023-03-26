@@ -11,6 +11,10 @@ using System.Text;
 
 namespace JsonToCupl
 {
+    /// <summary>
+    /// WinCUPL Code generator
+    /// Converts Yosys generated json file into CUPL
+    /// </summary>
     class CodeGenCupl : CodeGenBase
     {
         readonly ContainerNode _mod;
@@ -594,13 +598,13 @@ namespace JsonToCupl
 
             CalculateComplexity();
 
-            //Find cominational pinnodes (with no feedback)
+            //Find combinational pinnodes (with no feedback)
             var comboPinNodes = _createdPinNodes.Where(x => x.NodeProcessState == NodeProcessState.None && false == IsFeedbackNode(x)).ToArray();
             if (comboPinNodes.Length < limitCombin)
             {
                 return null;
             }
-            //Sort the array based on OutputComplexity in desending order
+            //Sort the array based on OutputComplexity in descending order
             Array.Sort(comboPinNodes, (x, y) => { return x.OutputComplexity.CompareTo(y.OutputComplexity); });
             //Get the list of nodes to remove
             Node[] removePinNodes = comboPinNodes.Take(Math.Max(comboPinNodes.Length - limitCombin, 0)).ToArray();
@@ -614,7 +618,7 @@ namespace JsonToCupl
         /// PINNODES that contain feedback to thems are excluded.  PINNODES that have the least complexity (number of terms * number of references) are chones for duplication
         /// This is set by using the LimitCombinationalPinNodes function.
         /// 
-        /// This feature is useful for devices that do not support burried pinnodes and require an actual external pin assignment, excluding that pin for IO 
+        /// This feature is useful for devices that do not support buried pinnodes and require an actual external pin assignment, excluding that pin for IO 
         /// 
         /// TOOD: Consider splitting this up
         /// </summary>
@@ -658,7 +662,7 @@ namespace JsonToCupl
                     //Duplicate the express, so PINNODE A = (b & c) # d, the express (b & c) # d will be cloned 
                     ScanExpressionNodes(expressionOutput, nodesOld, nodesNew, true, terminalNode);
 
-                    //Find new expression output
+                    //Find new expression output connection
                     PinConnection newExpressionOutput = nodesNew.Where(x => x.Name == expressionOutput.Parent.Name).First().Connections.GetOutput();
 
                     //replace the pinnodes target output with newExpressionOutput
@@ -877,8 +881,8 @@ namespace JsonToCupl
         void GenerateComboLogic(PinConnection outputConnection, StringBuilder sb)
         {
             bool skip = false;
-            Assert(outputConnection.OutputOrBidirectional,
-                "Invalid connection processing point, connection not output or bidirectional");
+            Assert(outputConnection.OutputOrBidirectional, "Invalid connection processing point, connection not output or bidirectional");
+
             Node parentNode = outputConnection.Parent;
             if (_visited.Contains(parentNode))
             {
@@ -907,8 +911,10 @@ namespace JsonToCupl
                     skip = true;
                     break;
             }
-            if (skip) return;
-
+            if (skip)
+            {
+                return;
+            }
             if (parentNode.Type == NodeType.Not)
             {
                 sb.Append("! ( ");

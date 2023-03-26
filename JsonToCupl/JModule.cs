@@ -135,7 +135,6 @@ namespace JsonToCupl
                 string name = oport.Key;
                 DirectionType direction = DirectionType.Unknown;
                 int[] bits = null;
-                bool isconstant = false;
                 int constantValue = 0;
                 foreach (var prop in oport.Value.CastJson<JObject>())
                 {
@@ -164,7 +163,6 @@ namespace JsonToCupl
                             if (jarray.Count == 1 && jarray[0].Type == JTokenType.String)
                             {
                                 bits = new int[] { 0 };
-                                isconstant = true;
                                 constantValue = (int)jarray[0];
                             }
                             else

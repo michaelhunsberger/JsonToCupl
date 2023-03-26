@@ -5,7 +5,7 @@ namespace JsonToCupl
 {
     static class TypeHelper
     {
-        static readonly ReadOnlyDictionary<string, NodeType> _map;
+        static readonly Dictionary<string, NodeType> _map;
         static TypeHelper()
         {
             Dictionary<string, NodeType> dic = new Dictionary<string, NodeType>();
@@ -16,7 +16,7 @@ namespace JsonToCupl
             dic.Add("$_TBUF_", NodeType.TBUF);
             dic.Add("FDCP", NodeType.DFF);
             dic.Add("LDCP", NodeType.Latch);
-            _map = new ReadOnlyDictionary<string, NodeType>(dic);
+            _map = new Dictionary<string, NodeType>(dic);
         }
 
         public static bool TryGetType(string stype, out NodeType type)
