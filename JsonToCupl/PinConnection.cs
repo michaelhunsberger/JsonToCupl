@@ -42,4 +42,3 @@ namespace JsonToCupl
         public bool OutputOrBidirectional => DirectionType == DirectionType.Output || DirectionType == DirectionType.Bidirectional;
     }
 }
-    

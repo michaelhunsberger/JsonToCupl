@@ -83,28 +83,28 @@ namespace JsonToCupl
 
         public static void PrintHelp(TextWriter tr)
         {
-            tr.WriteLine("Yosys file generator: JsonToCupl [yosys_file_options] -in <infile> -out <outfile>");
+            tr.WriteLine("Yosys file generator: JTC [yosys_file_options] -in <infile> -out <outfile>");
             tr.WriteLine("yosys_file_options:");
             tr.WriteLine($"  -{ARG_GEN_YOSYS}");
-            tr.WriteLine($"      Generate a yosys file.  This file can then we executed by yosys to generate a compatible json file.");
-            tr.WriteLine("   <infile>");
+            tr.WriteLine($"         Generate a yosys file.  This file can then be executed by yosys to generate a compatible json file.");
+            tr.WriteLine($"  -{ARG_GEN_IN} filenames(s)");
             tr.WriteLine("          Verilog file.");
-            tr.WriteLine("   <outfile>");
+            tr.WriteLine($"  -{ARG_GEN_OUT} filename");
             tr.WriteLine("          Json output file");
             tr.WriteLine("CUPL Generator options: JsonToCupl [cupl_gen_options] -in <infile> -out <outfile>");
-            tr.WriteLine("   <infile>");
+            tr.WriteLine($"  -{ARG_GEN_IN} filenames");
             tr.WriteLine("          Json file from yosys");
-            tr.WriteLine("   <outfile>");
+            tr.WriteLine($"  -{ARG_GEN_OUT} filename");
             tr.WriteLine("          Output CUPL file");
             tr.WriteLine("cupl_gen_options:");
             tr.WriteLine($"  -{ARG_PIN_FILE} <filename>");
-            tr.WriteLine("       Specifies a pin file.  If omitted, no pin numbers will be assigned to generated CUPL PIN declarations.");
+            tr.WriteLine("          Specifies a pin file.  If omitted, no pin numbers will be assigned to generated CUPL PIN declarations.");
             tr.WriteLine($"  -{ARG_DEVICE} <device_name>");
-            tr.WriteLine("       Specifies a device name.  If omitted, device name defaults to 'virtual'");
+            tr.WriteLine("          Specifies a device name.  If omitted, device name defaults to 'virtual'");
             tr.WriteLine($"  -{ARG_GEN_MODULE} <module_name>");
-            tr.WriteLine("       The module within the json file to process.  If more than one module is defined, this option is required.");
+            tr.WriteLine("          The module within the json file to process.  If more than one module is defined, this option is required.");
             tr.WriteLine($"  -{ARG_GEN_COMBIN_LIMIT} <integer>");
-            tr.WriteLine("       Limits number of buried combinational pinnodes.  If limit is reached, then the required number of pinnodes will be substituted with combinational expressions.  Pinnodes are chosen for expansion based on the least amount of added newly created nodes in the expression graph.");
+            tr.WriteLine("          Limits number of buried combinational pinnodes.  If limit is reached, then the required number of pinnodes will be substituted with combinational expressions.  Pinnodes are chosen for expansion based on the least amount of added newly created nodes in the expression graph.");
             tr.WriteLine("");
         }
 
@@ -147,6 +147,17 @@ namespace JsonToCupl
             }
 
             Check();
+
+            if (_pinFile != null)
+            {
+                using (var fs = File.OpenRead(_pinFile))
+                {
+                    using (StreamReader sr = new StreamReader(fs))
+                    {
+                        PinNums = Pins.Build(sr);
+                    }
+                }
+            } 
         }
 
         void ReadCodeGenOpt(string key)

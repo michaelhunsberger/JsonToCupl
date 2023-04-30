@@ -12,8 +12,7 @@ namespace JsonToCupl
     {
         static void Main(string[] args)
         {
-            ConfigArguments config = new ConfigArguments(args);
- 
+            ConfigArguments config = new ConfigArguments(args); 
             try
             {
                 config.BuildFromArgs();
@@ -95,6 +94,7 @@ namespace JsonToCupl
             }
             gen.GenerateCollapseNodes();
             gen.ExpandCombinationalPinNodes();
+            gen.FixPinNames();
             string outFile = config.OutFile;
             if (outFile == null)
             {

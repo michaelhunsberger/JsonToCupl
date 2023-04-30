@@ -248,7 +248,7 @@ namespace JsonToCupl
                     if (jcon.Bit == 0)
                     {
                         if (jcon.DirectionType != DirectionType.Input)
-                            throw new JTCParseExeption($"Constant value connected to non input pin", ocell.Value);
+                            throw new JTCParseExeption($"Constant value connected to non input connection", ocell.Value);
                         GenerateConstant(jcon);
                     }
                 }

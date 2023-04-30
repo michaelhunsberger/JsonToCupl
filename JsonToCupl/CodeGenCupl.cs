@@ -785,6 +785,33 @@ namespace JsonToCupl
             }
         }
 
+        public void FixPinNames()
+        {
+            foreach(Node pin in _createdPins)
+            {
+                pin.Name = ScrubPinName(pin.Name);
+            }
+
+            foreach(Node pinNode in _createdPinNodes)
+            {
+                pinNode.Name = ScrubPinName(pinNode.Name);
+            }
+        }
+
+        string ScrubPinName(string name)
+        {
+            StringBuilder sb = new StringBuilder(name);
+            for(int ix = 0; ix < sb.Length; ++ix)
+            {
+                char c = sb[ix];
+                if( !char.IsNumber(c) && !char.IsLetter(c))
+                {
+                    c = '_';
+                }
+                sb[ix] = c;
+            }
+            return sb.ToString();
+        }
 
         void WriteHeader(TextWriter tr)
         {
