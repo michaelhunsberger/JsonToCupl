@@ -51,7 +51,14 @@ Note:  You can change the device by editing the “device” statement within th
 
 ## Examples
 
-Within the source, I included a UART and ripple carry adder example.  In both examples, I was able to generate a JED file and program a chip.  Both was tested electrically as well. 
+Within the source, I included a UART and ripple carry adder example.  In both examples, I was able to generate a JED file and program a chip.  Both was tested electrically as well.
+
+## Development Information
+
+The JsonToCupl is written in C# under .NET Framework 4.0.  This is the last framework to work in XP.  I have a requirement to use an XP virtual machine for software compatibility issues with other vintage software.
+
+Building JsonToCupl should be easy, just open the solution and build it.  There is one NuGet dependency to Newtonsoft.JSON.
+
 
 ## Motivation
 
