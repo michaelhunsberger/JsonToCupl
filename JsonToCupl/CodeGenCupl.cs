@@ -13,7 +13,7 @@ namespace JsonToCupl
 {
     /// <summary>
     /// WinCUPL Code generator
-    /// Converts Yosys generated json file into CUPL
+    /// Converts Yosys generated JSON file into CUPL
     /// </summary>
     class CodeGenCupl : CodeGenBase
     {
@@ -589,7 +589,7 @@ namespace JsonToCupl
         /// Returns next PinNode that can be expanded.  Only combinational pinodes that have no feedback is considered.
         /// Returned node is chosen based on its output complexity (node with the smallest complexity is returned)
         /// </summary>
-        /// <param name="limitCombin">Preferred limmit of combinational pinnodes</param>
+        /// <param name="limitCombin">Preferred limit of combinational pinnodes</param>
         /// <returns>null if no candidates are found</returns>
         Node GetNextCollapsedCombinLogicPinNode(int limitCombin)
         {
@@ -614,8 +614,8 @@ namespace JsonToCupl
         }
 
         /// <summary>
-        /// Created duplicates of PIMNODES that are purly combinational logic and replaces reference to those nodes with the duplicated expression
-        /// PINNODES that contain feedback to thems are excluded.  PINNODES that have the least complexity (number of terms * number of references) are chones for duplication
+        /// Created duplicates of PIMNODES that are purely combinational logic and replaces reference to those nodes with the duplicated expression
+        /// PINNODES that contain feedback to themselves are excluded.  PINNODES that have the least complexity ( [number of terms] * [number of references] ) are chosen for duplication
         /// This is set by using the LimitCombinationalPinNodes function.
         /// 
         /// This feature is useful for devices that do not support buried pinnodes and require an actual external pin assignment, excluding that pin for IO 
@@ -742,7 +742,7 @@ namespace JsonToCupl
         }
 
         /// <summary>
-        /// Scans an output connectino 
+        /// Scans an output connection 
         /// </summary>
         /// <param name="outputConnection"></param>
         /// <param name="foundNodes"></param>
@@ -892,8 +892,8 @@ namespace JsonToCupl
                 sb.Append(name + " = ");
                 GenerateComboLogic(refToInput, sb);
                 sb.Append(";");
-                string code = Util.Wrap(sb.ToString(), 80);
                 //WinCupl is old, so just assume it has some issues with lines that are too long.
+                string code = Util.Wrap(sb.ToString(), 80);
                 tr.Write(code);
                 tr.Write(ENDLINE);
             }
