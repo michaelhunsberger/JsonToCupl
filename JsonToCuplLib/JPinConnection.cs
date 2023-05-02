@@ -1,4 +1,4 @@
-﻿namespace JsonToCupl
+﻿namespace JsonToCuplLib
 {
     class JPinConnection : PinConnection
     {

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
-    enum CodeGenAction
+    public enum CodeGenAction
     {
         /// <summary>
         /// Not doing anything?
@@ -21,7 +21,8 @@ namespace JsonToCupl
         /// </summary>
         WinCupl
     }
-    interface IConfig
+
+    public interface IConfig
     {
         /// <summary>
         /// Input files

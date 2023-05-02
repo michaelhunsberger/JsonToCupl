@@ -4,17 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{65C71DAB-DA73-4AC5-8D06-FA016969C0E4}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>JsonToCupl</RootNamespace>
-    <AssemblyName>JTC</AssemblyName>
+    <ProjectGuid>{1F0CC07A-FD10-465F-8984-B3CC396E4908}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>JsonToCuplLib</RootNamespace>
+    <AssemblyName>JsonToCuplLib</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -24,7 +23,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -45,28 +43,29 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CfgThrowHelper.cs" />
-    <Compile Include="CodeGenRun.cs" />
-    <Compile Include="ConfigArguments.cs" />
-    <Compile Include="ConfigException.cs" />
-    <Compile Include="ErrorCode.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="CodeGenCupl.cs" />
+    <Compile Include="CodeGenException.cs" />
+    <Compile Include="CodeGenYosys.cs" />
+    <Compile Include="Connections.cs" />
+    <Compile Include="ContainerNode.cs" />
+    <Compile Include="ICodeGen.cs" />
+    <Compile Include="IConfig.cs" />
+    <Compile Include="IJsonObj.cs" />
+    <Compile Include="IPins.cs" />
+    <Compile Include="JModule.cs" />
+    <Compile Include="JModuleCollection.cs" />
+    <Compile Include="JPinConnection.cs" />
+    <Compile Include="JTCParseExeption.cs" />
+    <Compile Include="JUtil.cs" />
+    <Compile Include="Node.cs" />
+    <Compile Include="PinConnection.cs" />
+    <Compile Include="Pins.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TypeHelper.cs" />
+    <Compile Include="Util.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
     <None Include="packages.config" />
-    <None Include="Yosys\cupl_cells_latch.v" />
-    <None Include="Yosys\cupl_dff.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\JsonToCuplLib\JsonToCuplLib.csproj">
-      <Project>{1f0cc07a-fd10-465f-8984-b3cc396e4908}</Project>
-      <Name>JsonToCuplLib</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PreBuildEvent>XCOPY "$(SolutionDir)JsonToCupl\Yosys" "$(TargetDir)\Yosys" /s /i /y</PreBuildEvent>
-  </PropertyGroup>
 </Project>

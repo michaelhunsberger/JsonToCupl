@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
     public class JTCParseExeption : Exception
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
     class CodeGenException : Exception
     {

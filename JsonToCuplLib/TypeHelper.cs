@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
     static class TypeHelper
     {

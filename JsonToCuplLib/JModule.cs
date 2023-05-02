@@ -3,13 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
     /*
      * For each input bit, find output bit pin of node
      */
 
-    class JModule : ContainerNode, IJsonObj
+    public class JModule : ContainerNode, IJsonObj
     {
         readonly Dictionary<int, JPinConnection> _lookup = new Dictionary<int, JPinConnection>();
         readonly Dictionary<int, Node> _regs = new Dictionary<int, Node>();

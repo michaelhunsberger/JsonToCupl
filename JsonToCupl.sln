@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.31702.278
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonToCupl", "JsonToCupl\JsonToCupl.csproj", "{65C71DAB-DA73-4AC5-8D06-FA016969C0E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonToCuplLib", "JsonToCuplLib\JsonToCuplLib.csproj", "{1F0CC07A-FD10-465F-8984-B3CC396E4908}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{65C71DAB-DA73-4AC5-8D06-FA016969C0E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65C71DAB-DA73-4AC5-8D06-FA016969C0E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{65C71DAB-DA73-4AC5-8D06-FA016969C0E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F0CC07A-FD10-465F-8984-B3CC396E4908}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F0CC07A-FD10-465F-8984-B3CC396E4908}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F0CC07A-FD10-465F-8984-B3CC396E4908}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F0CC07A-FD10-465F-8984-B3CC396E4908}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

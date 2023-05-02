@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
-    class CodeGenYosys : CodeGenBase
+    public class CodeGenYosys : CodeGenBase
     {
         readonly IConfig _config;
 

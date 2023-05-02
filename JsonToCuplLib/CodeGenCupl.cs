@@ -1,5 +1,4 @@
-﻿using JsonToCupl;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -9,13 +8,13 @@ using System.Net.Mime;
 using System.Reflection;
 using System.Text;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
     /// <summary>
     /// WinCUPL Code generator
     /// Converts Yosys generated JSON file into CUPL
     /// </summary>
-    class CodeGenCupl : CodeGenBase
+    public class CodeGenCupl : CodeGenBase
     {
         readonly ContainerNode _mod;
         readonly HashSet<Node> _visited = new HashSet<Node>();
@@ -97,6 +96,147 @@ namespace JsonToCupl
             WritePinNodeDefinitions(tr);
             WriteGroupSeparator(tr);
             WriteExpressions(tr);
+        }
+
+        public void FixPinNames()
+        {
+            foreach (Node pin in _createdPins)
+            {
+                pin.Name = ScrubPinName(pin.Name);
+            }
+
+            foreach (Node pinNode in _createdPinNodes)
+            {
+                pinNode.Name = ScrubPinName(pinNode.Name);
+            }
+        }
+
+        /// <summary>
+        /// Created duplicates of PIMNODES that are purely combinational logic and replaces reference to those nodes with the duplicated expression
+        /// PINNODES that contain feedback to themselves are excluded.  PINNODES that have the least complexity ( [number of terms] * [number of references] ) are chosen for duplication
+        /// This is set by using the LimitCombinationalPinNodes function.
+        /// 
+        /// This feature is useful for devices that do not support buried pinnodes and require an actual external pin assignment, excluding that pin for IO 
+        /// 
+        /// TOOD: Consider splitting this up
+        /// </summary>
+        public void ExpandCombinationalPinNodes()
+        {
+            if (_config.LimitCombinationalPinNodes == null || _config.LimitCombinationalPinNodes < 0)
+            {
+                return;
+            }
+            int limitCombin = _config.LimitCombinationalPinNodes.Value;
+
+            Node removePinNode;
+            while ((removePinNode = GetNextCollapsedCombinLogicPinNode(limitCombin)) != null)
+            {
+                //Contains the target input (input connection the pinnode outputs to) and the new cloned output connection of the pinnode expression
+                List<Tuple<PinConnection, PinConnection>> replacePinNodeRef = new List<Tuple<PinConnection, PinConnection>>();
+
+                _createdPinNodes.Remove(removePinNode);
+
+                PinConnection inputToPinNode = removePinNode.Connections.GetInputs().First();
+                PinConnection expressionOutput = inputToPinNode.Refs[0];
+                PinConnection outputPinNode = removePinNode.Connections.GetOutput();
+
+                List<Node> combinNodes = new List<Node>();
+                List<Node> _ = new List<Node>();
+                List<Node> terminalNodes = new List<Node>();
+
+                ScanExpressionNodes(expressionOutput, combinNodes, _, false, terminalNodes);
+
+                foreach (PinConnection targetConInput in outputPinNode.Refs)
+                {
+                    //If the input is part of a feedback expression, then skip duplication
+                    //TODO: this should never happen, we exclude pinnodes that have feedback
+                    if (combinNodes.Contains(targetConInput.Parent))
+                        continue;
+
+                    List<Node> nodesOld = new List<Node>();
+                    List<Node> nodesNew = new List<Node>();
+                    List<Node> terminalNode = new List<Node>();
+
+                    //Duplicate the express, so PINNODE A = (b & c) # d, the express (b & c) # d will be cloned 
+                    ScanExpressionNodes(expressionOutput, nodesOld, nodesNew, true, terminalNode);
+
+                    //Find new expression output connection
+                    PinConnection newExpressionOutput = nodesNew.Where(x => x.Name == expressionOutput.Parent.Name).First().Connections.GetOutput();
+
+                    //replace the pinnodes target output with newExpressionOutput
+                    replacePinNodeRef.Add(new Tuple<PinConnection, PinConnection>(targetConInput, newExpressionOutput));
+
+                    //We are trying to build the connection references (using the equivalent oldNode as a reference).
+                    foreach (Node dup in nodesNew)
+                    {
+                        //Find matching old node
+                        Node oldNode = nodesOld.Where(x => x.Name == dup.Name).First();
+
+                        //Loop though each input of the old node
+                        foreach (PinConnection inputConOld in oldNode.Connections.GetInputs())
+                        {
+                            //Input to new node 
+                            PinConnection inputConNew = dup.Connections.GetInputs().First(x => x.Name == inputConOld.Name);
+
+                            //Old output ref
+                            PinConnection outConOld = inputConOld.Refs[0];
+
+                            //Old output node
+                            Node outNodeOld = outConOld.Parent;
+
+                            //Attempt to find the corresponding output node (for inputConNew) within newNodes
+                            Node foundOutNode = nodesNew.FirstOrDefault(x => x.Name == outNodeOld.Name);
+
+                            PinConnection outRef = null;
+
+                            //found output ref node is not within duplicated node list (it is not an output of the cloned combinational logic), it is external
+                            if (foundOutNode == null)
+                            {
+                                //This is the pinnode, we are eliminating the pinnode.  targetConInput is the reference input connection to the pinnodes output, so its parent node output is what we need
+                                //for the inputConNews reference
+                                if (outNodeOld == removePinNode)
+                                {
+                                    //TODO: Not sure it needs to be a bidirectional, this would be tri-state value within buried combinational logic
+                                    outRef = targetConInput.Parent.Connections.GetOutputOrBidirectional();
+                                }
+                                else
+                                {
+                                    //TODO: Not sure it needs to be a bidirectional, this would be tri-state value within buried combinational logic
+                                    outRef = outNodeOld.Connections.GetOutputOrBidirectional();
+                                }
+                            }
+                            else
+                            {
+                                outRef = foundOutNode.Connections.GetOutput(); //No way its bidirectional
+                            }
+                            inputConNew.Refs.Add(outRef);
+                            outRef.Refs.Add(inputConNew);
+                        }
+                    }
+                }
+                //Search for references of the pinnode, replace with cloned expression
+                HashSet<Node> referencedNodes = new HashSet<Node>();
+                foreach (PinConnection con in removePinNode.Connections)
+                {
+                    foreach (PinConnection conRef in con.Refs)
+                    {
+                        referencedNodes.Add(conRef.Parent);
+                    }
+                    con.Refs.Clear();
+                }
+                foreach (Node nodeRef in referencedNodes)
+                {
+                    foreach (PinConnection con in nodeRef.Connections)
+                    {
+                        int num = con.Refs.RemoveAll(x => removePinNode == x.Parent);
+                    }
+                }
+                foreach (var updateRef in replacePinNodeRef)
+                {
+                    updateRef.Item1.Refs.Add(updateRef.Item2);
+                    updateRef.Item2.Refs.Add(updateRef.Item1);
+                }
+            }
         }
 
         /// <summary>
@@ -614,134 +754,6 @@ namespace JsonToCupl
         }
 
         /// <summary>
-        /// Created duplicates of PIMNODES that are purely combinational logic and replaces reference to those nodes with the duplicated expression
-        /// PINNODES that contain feedback to themselves are excluded.  PINNODES that have the least complexity ( [number of terms] * [number of references] ) are chosen for duplication
-        /// This is set by using the LimitCombinationalPinNodes function.
-        /// 
-        /// This feature is useful for devices that do not support buried pinnodes and require an actual external pin assignment, excluding that pin for IO 
-        /// 
-        /// TOOD: Consider splitting this up
-        /// </summary>
-        public void ExpandCombinationalPinNodes()
-        {
-            if (_config.LimitCombinationalPinNodes == null || _config.LimitCombinationalPinNodes < 0)
-            {
-                return;
-            }
-            int limitCombin = _config.LimitCombinationalPinNodes.Value;
-
-            Node removePinNode;
-            while ((removePinNode = GetNextCollapsedCombinLogicPinNode(limitCombin)) != null)
-            {
-                //Contains the target input (input connection the pinnode outputs to) and the new cloned output connection of the pinnode expression
-                List<Tuple<PinConnection, PinConnection>> replacePinNodeRef = new List<Tuple<PinConnection, PinConnection>>();
-
-                _createdPinNodes.Remove(removePinNode);
-
-                PinConnection inputToPinNode = removePinNode.Connections.GetInputs().First();
-                PinConnection expressionOutput = inputToPinNode.Refs[0];
-                PinConnection outputPinNode = removePinNode.Connections.GetOutput();
-
-                List<Node> combinNodes = new List<Node>();
-                List<Node> _ = new List<Node>();
-                List<Node> terminalNodes = new List<Node>();
-
-                ScanExpressionNodes(expressionOutput, combinNodes, _, false, terminalNodes);
-
-                foreach (PinConnection targetConInput in outputPinNode.Refs)
-                {
-                    //If the input is part of a feedback expression, then skip duplication
-                    //TODO: this should never happen, we exclude pinnodes that have feedback
-                    if (combinNodes.Contains(targetConInput.Parent))
-                        continue;
-
-                    List<Node> nodesOld = new List<Node>();
-                    List<Node> nodesNew = new List<Node>();
-                    List<Node> terminalNode = new List<Node>();
-
-                    //Duplicate the express, so PINNODE A = (b & c) # d, the express (b & c) # d will be cloned 
-                    ScanExpressionNodes(expressionOutput, nodesOld, nodesNew, true, terminalNode);
-
-                    //Find new expression output connection
-                    PinConnection newExpressionOutput = nodesNew.Where(x => x.Name == expressionOutput.Parent.Name).First().Connections.GetOutput();
-
-                    //replace the pinnodes target output with newExpressionOutput
-                    replacePinNodeRef.Add(new Tuple<PinConnection, PinConnection>(targetConInput, newExpressionOutput));
-
-                    //We are trying to build the connection references (using the equivalent oldNode as a reference).
-                    foreach (Node dup in nodesNew)
-                    {
-                        //Find matching old node
-                        Node oldNode = nodesOld.Where(x => x.Name == dup.Name).First();
-
-                        //Loop though each input of the old node
-                        foreach (PinConnection inputConOld in oldNode.Connections.GetInputs())
-                        {
-                            //Input to new node 
-                            PinConnection inputConNew = dup.Connections.GetInputs().First(x => x.Name == inputConOld.Name);
-
-                            //Old output ref
-                            PinConnection outConOld = inputConOld.Refs[0];
-
-                            //Old output node
-                            Node outNodeOld = outConOld.Parent;
-
-                            //Attempt to find the corresponding output node (for inputConNew) within newNodes
-                            Node foundOutNode = nodesNew.FirstOrDefault(x => x.Name == outNodeOld.Name);
-
-                            PinConnection outRef = null;
-
-                            //found output ref node is not within duplicated node list (it is not an output of the cloned combinational logic), it is external
-                            if (foundOutNode == null)
-                            {
-                                //This is the pinnode, we are eliminating the pinnode.  targetConInput is the reference input connection to the pinnodes output, so its parent node output is what we need
-                                //for the inputConNews reference
-                                if (outNodeOld == removePinNode)
-                                {
-                                    //TODO: Not sure it needs to be a bidirectional, this would be tri-state value within buried combinational logic
-                                    outRef = targetConInput.Parent.Connections.GetOutputOrBidirectional();
-                                }
-                                else
-                                {
-                                    //TODO: Not sure it needs to be a bidirectional, this would be tri-state value within buried combinational logic
-                                    outRef = outNodeOld.Connections.GetOutputOrBidirectional();
-                                }
-                            }
-                            else
-                            {
-                                outRef = foundOutNode.Connections.GetOutput(); //No way its bidirectional
-                            }
-                            inputConNew.Refs.Add(outRef);
-                            outRef.Refs.Add(inputConNew);
-                        }
-                    }
-                }
-                //Search for references of the pinnode, replace with cloned expression
-                HashSet<Node> referencedNodes = new HashSet<Node>();
-                foreach (PinConnection con in removePinNode.Connections)
-                {
-                    foreach (PinConnection conRef in con.Refs)
-                    {
-                        referencedNodes.Add(conRef.Parent);
-                    }
-                    con.Refs.Clear();
-                }
-                foreach (Node nodeRef in referencedNodes)
-                {
-                    foreach (PinConnection con in nodeRef.Connections)
-                    {
-                        int num = con.Refs.RemoveAll(x => removePinNode == x.Parent);
-                    }
-                }
-                foreach (var updateRef in replacePinNodeRef)
-                {
-                    updateRef.Item1.Refs.Add(updateRef.Item2);
-                    updateRef.Item2.Refs.Add(updateRef.Item1);
-                }
-            }
-        }
-
-        /// <summary>
         /// Scans an output connection 
         /// </summary>
         /// <param name="outputConnection"></param>
@@ -784,19 +796,7 @@ namespace JsonToCupl
                 ScanExpressionNodes(inputCon.Refs.First(), foundCombinNodes, dupCombinNodes, dupCombin, foundTerminalNodes);
             }
         }
-
-        public void FixPinNames()
-        {
-            foreach(Node pin in _createdPins)
-            {
-                pin.Name = ScrubPinName(pin.Name);
-            }
-
-            foreach(Node pinNode in _createdPinNodes)
-            {
-                pinNode.Name = ScrubPinName(pinNode.Name);
-            }
-        }
+         
 
         string ScrubPinName(string name)
         {

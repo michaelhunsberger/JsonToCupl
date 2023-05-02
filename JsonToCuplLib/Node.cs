@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
-    enum NodeType
+    public enum NodeType
     {
         Unknown,
         Module,
@@ -20,7 +20,7 @@ namespace JsonToCupl
     }
 
     [Flags]
-    enum NodeProcessState
+    public enum NodeProcessState
     {
         None = 0,
         MergeRegister = (1 << 0),
@@ -32,7 +32,7 @@ namespace JsonToCupl
     /// a better way would have been a Graph class with a dictionary inConnection\outConnection style data structure.
     /// The graph is a multigraph/bidirectional graph.  This gets the job done though.
     /// </summary>
-    class Node 
+    public class Node 
     {
         public Node(string name, NodeType type, int constant = 0)
         {

@@ -1,6 +1,6 @@
-﻿namespace JsonToCupl
+﻿namespace JsonToCuplLib
 {
-    interface IPins
+    public interface IPins
     {
         int this[string pinName] { get; }
     }

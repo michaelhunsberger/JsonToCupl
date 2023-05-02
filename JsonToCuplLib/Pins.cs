@@ -7,12 +7,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
     /// <summary>
     /// Used for the pins file in CUPL
     /// </summary>
-    class Pins : IPins
+    public class Pins : IPins
     {
         readonly Dictionary<string, int> _pins;
         class NoPins : IPins

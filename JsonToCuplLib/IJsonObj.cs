@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
     interface IJsonObj
     {

@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
-    abstract class CodeGenBase
+    public abstract class CodeGenBase
     {
         public abstract void GenerateCode(TextWriter tr);
 

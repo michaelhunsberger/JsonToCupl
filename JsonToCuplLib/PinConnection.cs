@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
-    enum DirectionType
+    public enum DirectionType
     {
         Unknown,
         Input,
@@ -15,7 +15,7 @@ namespace JsonToCupl
     /// <summary>
     /// TODO, perhaps a better name would have been PortConnection, 'pin' implies external connection outside of a module
     /// </summary>
-    class PinConnection
+    public class PinConnection
     {
         public Connections Refs { get; set; } = new Connections();
         public DirectionType DirectionType { get; set; } = DirectionType.Unknown;

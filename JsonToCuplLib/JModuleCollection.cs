@@ -2,9 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
-    class JModuleCollection : IJsonObj, IEnumerable<JModule>
+    public class JModuleCollection : IJsonObj, IEnumerable<JModule>
     {
         readonly List<JModule> _modules = new List<JModule>();
 

@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
 
-    class Connections : List<PinConnection>
+    public class Connections : List<PinConnection>
     {
         public PinConnection GetOutput()
         {

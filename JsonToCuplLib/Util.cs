@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
     static class Util
     {

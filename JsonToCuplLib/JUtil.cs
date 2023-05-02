@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace JsonToCupl
+namespace JsonToCuplLib
 {
     static class JUtil
     {
