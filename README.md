@@ -42,12 +42,12 @@ Note:  You can change the device by editing the “device” statement within th
 | Argument | Description |
 | -------- | ---------- |
 | -yosys | Generate a Yosys file.  This file can then be executed by Yosys to generate a compatible JSON file. |
-| -in <filename(s)> | Verilog files. |
-| -out <filename> | Yosys output file or generated CUPL.  Yosys scripts should have a ".ys" extension.  CUPL code should have a ".PLD" extension. |
-| -pinfile <filename> | Specifies a pin file.  If omitted, no pin numbers will be assigned to generate CUPL PIN declarations. |
-| -device <device_name> | Specifies a device name.  If omitted, device name defaults to 'virtual'. |
-| -module <module_name> | The module within the json file to process.  If more than one module is defined in the design, this option is required. |
-| -combinlimit <value> | Limits number of buried combinational pinnodes.  If limit is reached, then the required number of pinnodes will be substituted with combinational expressions.  Pinnodes are chosen for expansion based on the least amount of newly created nodes in the expression graph. |
+| -in filenames | Verilog files. |
+| -out filename | Yosys output file or generated CUPL.  Yosys scripts should have a ".ys" extension.  CUPL code should have a ".PLD" extension. |
+| -pinfile filename | Specifies a pin file.  If omitted, no pin numbers will be assigned to generate CUPL PIN declarations. |
+| -device device_name | Specifies a device name.  If omitted, device name defaults to 'virtual'. |
+| -module module_name | The module within the json file to process.  If more than one module is defined in the design, this option is required. |
+| -combinlimit value | Limits number of buried combinational pinnodes.  If limit is reached, then the required number of pinnodes will be substituted with combinational expressions.  Pinnodes are chosen for expansion based on the least amount of newly created nodes in the expression graph. |
 
 ## Examples
 
