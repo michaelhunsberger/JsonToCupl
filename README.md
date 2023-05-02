@@ -47,7 +47,7 @@ Note:  You can change the device by editing the “device” statement within th
 | -pinfile <filename> | Specifies a pin file.  If omitted, no pin numbers will be assigned to generate CUPL PIN declarations. |
 | -device <device_name> | Specifies a device name.  If omitted, device name defaults to 'virtual'. |
 | -module <module_name> | The module within the json file to process.  If more than one module is defined in the design, this option is required. |
-| -combinlimit <integer> | Limits number of buried combinational pinnodes.  If limit is reached, then the required number of pinnodes will be substituted with combinational expressions.  Pinnodes are chosen for expansion based on the least amount of newly created nodes in the expression graph. |
+| -combinlimit <value> | Limits number of buried combinational pinnodes.  If limit is reached, then the required number of pinnodes will be substituted with combinational expressions.  Pinnodes are chosen for expansion based on the least amount of newly created nodes in the expression graph. |
 
 ## Examples
 
