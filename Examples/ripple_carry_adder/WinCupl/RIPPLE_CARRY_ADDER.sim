@@ -1,0 +1,95 @@
+%SIGNAL
+PIN  18 =  JTCN1 
+PIN  17 =  JTCN2 
+PIN  16 =  JTCN3 
+PIN  15 =  JTCN5 
+PIN   2 =  a0 
+PIN   3 =  a1 
+PIN   5 =  a2 
+PIN   6 =  a3 
+PIN   7 =  b0 
+PIN   8 =  b1 
+PIN   9 =  b2 
+PIN  10 =  b3 
+PIN  19 =  cout 
+PIN  23 =  out0 
+PIN  22 =  out1 
+PIN  21 =  out2 
+PIN  20 =  out3 
+%END
+
+%FIELD
+%END
+
+%EQUATION
+JTCN1 =>
+    a0 & b0
+
+JTCN2 =>
+    a1 & !b1
+  # !a1 & b1
+
+JTCN3 =>
+    !JTCN1 & !a1
+  # !JTCN1 & !b1
+  # !JTCN2 & !a1
+  # !JTCN2 & !b1
+
+JTCN5 =>
+    !JTCN3 & !a2
+  # !JTCN3 & !b2
+  # !a2 & !b2
+
+cout =>
+    !JTCN5 & !a3
+  # !JTCN5 & !b3
+  # !a3 & !b3
+
+out0 =>
+    a0 & !b0
+  # !a0 & b0
+
+out1 =>
+    JTCN1 & !JTCN2
+  # !JTCN1 & JTCN2
+
+out2 =>
+    JTCN3 & !a2 & !b2
+  # JTCN3 & a2 & b2
+  # !JTCN3 & !a2 & b2
+  # !JTCN3 & a2 & !b2
+
+out3 =>
+    JTCN5 & !a3 & !b3
+  # JTCN5 & a3 & b3
+  # !JTCN5 & !a3 & b3
+  # !JTCN5 & a3 & !b3
+
+JTCN1.oe  =>
+    1 
+
+JTCN2.oe  =>
+    1 
+
+JTCN3.oe  =>
+    1 
+
+JTCN5.oe  =>
+    1 
+
+cout.oe  =>
+    1 
+
+out0.oe  =>
+    1 
+
+out1.oe  =>
+    1 
+
+out2.oe  =>
+    1 
+
+out3.oe  =>
+    1 
+
+%END

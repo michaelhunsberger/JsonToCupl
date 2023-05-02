@@ -1,0 +1,863 @@
+Atmel ATF1504AS Fitter Version 1.8.7.8 ,running Tue May 02 11:21:18 2023
+
+
+fit1504 E:\REPOS\JSONTOCUPL\EXAMPLES\UART\WINCUPL\UART.tt2 -CUPL -dev P1504C44 -JTAG ON
+
+
+****** Initial fitting strategy and property ******
+ Pla_in_file = UART.tt2
+ Pla_out_file = UART.tt3
+ Jedec_file = UART.jed
+ Vector_file = UART.tmv
+ verilog_file = UART.vt
+ Time_file = 
+ Log_file = UART.fit
+ err_file = 
+ Device_name = PLCC44
+ Module_name = 
+ Package_type = PLCC
+ Preassign_file = 
+ Property_file = 
+ Sleep_mode = 
+ Preassignment = 
+ Security_mode = OFF
+ Pin_keep_mode = ON
+ Dedicated_input_clock = 
+ Dedicated_input_reset = 
+ Dedicated_input_oe = 
+ supporter = CUPL
+ optimize = ON
+ Soft_buffer = 
+ Xor_synthesis = OFF
+ Foldback_logic =  on
+ Expander = 
+ Cascade_logic = OFF
+ Dedicated_input = 
+ Output_fast = OFF
+ *******************************
+ Power down pin 1 = OFF
+ Power down pin 2 = OFF
+ power_reset = OFF
+ JTAG = ON
+ TDI pullup = OFF
+ TMS pullup = OFF
+ MC_power = OFF
+ Open_collector = OFF
+ ITD0 = ON
+ ITD1 = ON
+ ITD2 = ON
+ Fast_inlatch = off
+ *******************************
+---------------------------------------------------------
+ Fitter_Pass 1, Preassign = KEEP, LOGIC_DOUBLING : OFF 
+ ... 
+
+Performing global Output Enable pin assignments ...
+
+Performing global pin assignments ...
+--------------------------------------
+
+
+
+Final global control pins assignment (if applicable)...
+-------------------------------------------------------
+clk assigned to pin  43
+res_n assigned to pin  1
+
+
+
+Performing input pin pre-assignments ...
+------------------------------------
+clk assigned to pin  43
+res_n assigned to pin  1
+
+Attempt to place floating signals ...
+------------------------------------
+rx is placed at pin 12 (MC 1)
+stb is placed at pin 11 (MC 3)
+tx_rdy is placed at pin 9 (MC 4)
+rx_rdy is placed at pin 8 (MC 5)
+TDI is placed at pin 7 (MC 8)
+rx_inst_rx_shifter1 is placed at feedback node 609 (MC 9)
+rx_inst_rx_shifter0 is placed at feedback node 610 (MC 10)
+rx_byte1 is placed at pin 6 (MC 11)
+rx_inst_count0 is placed at feedback node 612 (MC 12)
+rx_inst_count1 is placed at feedback node 613 (MC 13)
+rx_byte7 is placed at pin 5 (MC 14)
+JTCN107 is placed at foldback expander node 314 (MC 14)
+tx is placed at pin 4 (MC 16)
+uart_clock_inst_counter0 is placed at feedback node 617 (MC 17)
+rx_inst_state2 is placed at feedback node 618 (MC 18)
+uart_clk is placed at pin 20 (MC 19)
+rx_byte3 is placed at pin 19 (MC 20)
+rx_byte4 is placed at pin 18 (MC 21)
+uart_clock_inst_counter5 is placed at feedback node 622 (MC 22)
+uart_clock_inst_counter6 is placed at feedback node 623 (MC 23)
+rx_byte5 is placed at pin 17 (MC 24)
+rx_byte2 is placed at pin 16 (MC 25)
+JTCN106 is placed at foldback expander node 325 (MC 25)
+uart_clock_inst_counter4 is placed at feedback node 626 (MC 26)
+JTCN100 is placed at foldback expander node 326 (MC 26)
+rx_inst_count2 is placed at feedback node 627 (MC 27)
+JTCN111 is placed at foldback expander node 327 (MC 27)
+uart_clock_inst_counter7 is placed at feedback node 628 (MC 28)
+JTCN107 is placed at foldback expander node 328 (MC 28)
+rx_inst_count3 is placed at feedback node 629 (MC 29)
+JTCN113 is placed at foldback expander node 329 (MC 29)
+rx_byte0 is placed at pin 14 (MC 30)
+JTCN115 is placed at foldback expander node 330 (MC 30)
+rx_inst_count4 is placed at feedback node 631 (MC 31)
+JTCN101 is placed at foldback expander node 331 (MC 31)
+TMS is placed at pin 13 (MC 32)
+rx_inst_state0 is placed at feedback node 632 (MC 32)
+JTCN120 is placed at foldback expander node 332 (MC 32)
+tx_byte2 is placed at pin 24 (MC 33)
+rx_inst_rx_shifter2 is placed at feedback node 634 (MC 34)
+tx_byte0 is placed at pin 25 (MC 35)
+tx_byte1 is placed at pin 26 (MC 36)
+tx_byte3 is placed at pin 27 (MC 37)
+tx_inst_bit_count2 is placed at feedback node 637 (MC 37)
+JTCN104 is placed at foldback expander node 337 (MC 37)
+tx_inst_stb_ff is placed at feedback node 638 (MC 38)
+uart_clock_inst_counter2 is placed at feedback node 639 (MC 39)
+uart_clock_inst_counter1 is placed at feedback node 640 (MC 40)
+tx_inst_bit_count0 is placed at feedback node 641 (MC 41)
+uart_clock_inst_counter3 is placed at feedback node 642 (MC 42)
+tx_inst_bit_count1 is placed at feedback node 643 (MC 43)
+JTCN107 is placed at foldback expander node 343 (MC 43)
+tx_inst_state1 is placed at feedback node 644 (MC 44)
+JTCN124 is placed at foldback expander node 344 (MC 44)
+rx_inst_state1 is placed at feedback node 645 (MC 45)
+JTCN103 is placed at foldback expander node 345 (MC 45)
+rx_byte6 is placed at pin 31 (MC 46)
+JTCN129 is placed at foldback expander node 346 (MC 46)
+tx_inst_state0 is placed at feedback node 647 (MC 47)
+JTCN128 is placed at foldback expander node 347 (MC 47)
+TCK is placed at pin 32 (MC 48)
+tx_byte5 is placed at pin 33 (MC 49)
+tx_inst_baud_count1 is placed at feedback node 650 (MC 50)
+tx_byte6 is placed at pin 34 (MC 51)
+tx_byte4 is placed at pin 36 (MC 52)
+tx_byte7 is placed at pin 37 (MC 53)
+tx_inst_tx_byte_ff7 is placed at feedback node 654 (MC 54)
+tx_inst_tx_byte_ff4 is placed at feedback node 655 (MC 55)
+TDO is placed at pin 38 (MC 56)
+tx_inst_tx_byte_ff6 is placed at feedback node 656 (MC 56)
+tx_inst_tx_byte_ff5 is placed at feedback node 658 (MC 58)
+tx_inst_tx_byte_ff3 is placed at feedback node 659 (MC 59)
+tx_inst_tx_byte_ff1 is placed at feedback node 660 (MC 60)
+tx_inst_tx_byte_ff0 is placed at feedback node 661 (MC 61)
+tx_inst_tx_byte_ff2 is placed at feedback node 663 (MC 63)
+tx_inst_baud_count0 is placed at feedback node 664 (MC 64)
+
+                                                                 
+                                                                 
+                                                                 
+                                                                 
+                  r  r                                           
+                  x  x                                           
+                  _  _                                           
+                  b  b           r                               
+                  y  y           e                               
+                  t  t     V     s    c  G                       
+                  e  e  t  C     _    l  N                       
+                  1  7  x  C     n    k  D                       
+               ____________________________________              
+              /   6  5  4  3  2  1 44 43 42 41 40  \             
+         TDI |  7                                39 |            
+      rx_rdy |  8                                38 | TDO        
+      tx_rdy |  9                                37 | tx_byte7   
+         GND | 10                                36 | tx_byte4   
+         stb | 11                                35 | VCC        
+          rx | 12            ATF1504             34 | tx_byte6   
+         TMS | 13          44-Lead PLCC          33 | tx_byte5   
+    rx_byte0 | 14                                32 | TCK        
+         VCC | 15                                31 | rx_byte6   
+    rx_byte2 | 16                                30 | GND        
+    rx_byte5 | 17                                29 |            
+             |   18 19 20 21 22 23 24 25 26 27 28   |            
+              \____________________________________/             
+                 r  r  u     G  V  t  t  t  t                    
+                 x  x  a     N  C  x  x  x  x                    
+                 _  _  r     D  C  _  _  _  _                    
+                 b  b  t           b  b  b  b                    
+                 y  y  _           y  y  y  y                    
+                 t  t  c           t  t  t  t                    
+                 e  e  l           e  e  e  e                    
+                 4  3  k           2  0  1  3                    
+
+
+
+VCC = Supply Voltage pin which must be connected to (5.0V or 3.0V)
+
+GND = GND pin which must be connected to ground
+
+TMS,TDI,TDO,TDI = JTAG pins which must reserved for the JTAG interface
+
+NC = Unused I/O pins which must be unconnected on the board
+
+Universal-Interconnect-Multiplexer assignments
+------------------------------------------------
+FanIn assignment for block A [25]
+{
+rx_byte1,rx_inst_rx_shifter0,rx_inst_rx_shifter1,rx_inst_state0,rx_inst_count0,rx_inst_state1,rx_byte2,rx_inst_count1,rx_inst_state2,rx_byte7,rx_inst_rx_shifter2,
+tx_inst_bit_count2,tx_inst_state0,tx_inst_tx_byte_ff1,tx_inst_tx_byte_ff3,tx_inst_tx_byte_ff5,tx_inst_tx_byte_ff4,tx_inst_tx_byte_ff2,tx_inst_tx_byte_ff6,tx_inst_tx_byte_ff0,tx_inst_bit_count1,tx_inst_tx_byte_ff7,tx_inst_state1,tx_inst_bit_count0,
+uart_clk,
+}
+Multiplexer assignment for block A
+rx_byte1		(MC3	P)   : MUX 0		Ref (A11p)
+rx_inst_rx_shifter0		(MC2	FB)  : MUX 1		Ref (A10fb)
+rx_inst_rx_shifter1		(MC1	FB)  : MUX 3		Ref (A9fb)
+tx_inst_bit_count2		(MC12	FB)  : MUX 4		Ref (C37fb)
+rx_inst_state0		(MC10	FB)  : MUX 5		Ref (B32fb)
+tx_inst_state0		(MC17	FB)  : MUX 7		Ref (C47fb)
+rx_inst_count0		(MC4	FB)  : MUX 9		Ref (A12fb)
+tx_inst_tx_byte_ff1		(MC23	FB)  : MUX 11		Ref (D60fb)
+tx_inst_tx_byte_ff3		(MC22	FB)  : MUX 15		Ref (D59fb)
+tx_inst_tx_byte_ff5		(MC21	FB)  : MUX 17		Ref (D58fb)
+rx_inst_state1		(MC16	FB)  : MUX 19		Ref (C45fb)
+tx_inst_tx_byte_ff4		(MC19	FB)  : MUX 20		Ref (D55fb)
+tx_inst_tx_byte_ff2		(MC25	FB)  : MUX 21		Ref (D63fb)
+rx_byte2		(MC9	P)   : MUX 22		Ref (B25p)
+rx_inst_count1		(MC5	FB)  : MUX 23		Ref (A13fb)
+tx_inst_tx_byte_ff6		(MC20	FB)  : MUX 24		Ref (D56fb)
+tx_inst_tx_byte_ff0		(MC24	FB)  : MUX 25		Ref (D61fb)
+rx_inst_state2		(MC7	FB)  : MUX 26		Ref (B18fb)
+tx_inst_bit_count1		(MC14	FB)  : MUX 27		Ref (C43fb)
+rx_byte7		(MC6	P)   : MUX 28		Ref (A14p)
+tx_inst_tx_byte_ff7		(MC18	FB)  : MUX 30		Ref (D54fb)
+uart_clk		(MC8	P)   : MUX 31		Ref (B19p)
+rx_inst_rx_shifter2		(MC11	FB)  : MUX 32		Ref (C34fb)
+tx_inst_state1		(MC15	FB)  : MUX 35		Ref (C44fb)
+tx_inst_bit_count0		(MC13	FB)  : MUX 37		Ref (C41fb)
+
+FanIn assignment for block B [25]
+{
+rx_byte1,rx_byte4,rx_byte6,rx,rx_byte0,rx_inst_state0,rx_inst_count0,rx_inst_count3,rx_inst_count4,rx_byte5,rx_inst_state1,rx_inst_state2,rx_inst_count1,rx_byte2,rx_byte3,rx_inst_count2,
+uart_clock_inst_counter5,uart_clock_inst_counter6,uart_clock_inst_counter2,uart_clock_inst_counter1,uart_clk,uart_clock_inst_counter0,uart_clock_inst_counter4,uart_clock_inst_counter7,uart_clock_inst_counter3,
+}
+Multiplexer assignment for block B
+rx_byte1		(MC1	P)   : MUX 0		Ref (A11p)
+rx_byte4		(MC8	P)   : MUX 1		Ref (B21p)
+rx_byte6		(MC24	P)   : MUX 2		Ref (C46p)
+rx			(MC25	P)   : MUX 3		Ref (A1p)
+rx_byte0		(MC17	P)   : MUX 4		Ref (B30p)
+rx_inst_state0		(MC19	FB)  : MUX 5		Ref (B32fb)
+uart_clock_inst_counter5		(MC9	FB)  : MUX 6		Ref (B22fb)
+rx_inst_count0		(MC2	FB)  : MUX 9		Ref (A12fb)
+rx_inst_count3		(MC16	FB)  : MUX 11		Ref (B29fb)
+uart_clock_inst_counter6		(MC10	FB)  : MUX 12		Ref (B23fb)
+rx_inst_count4		(MC18	FB)  : MUX 13		Ref (B31fb)
+uart_clock_inst_counter2		(MC20	FB)  : MUX 14		Ref (C39fb)
+rx_byte5		(MC11	P)   : MUX 15		Ref (B24p)
+rx_inst_state1		(MC23	FB)  : MUX 17		Ref (C45fb)
+uart_clock_inst_counter1		(MC21	FB)  : MUX 18		Ref (C40fb)
+rx_inst_state2		(MC5	FB)  : MUX 22		Ref (B18fb)
+uart_clk		(MC6	P)   : MUX 23		Ref (B19p)
+uart_clock_inst_counter0		(MC4	FB)  : MUX 24		Ref (B17fb)
+rx_inst_count1		(MC3	FB)  : MUX 25		Ref (A13fb)
+uart_clock_inst_counter4		(MC13	FB)  : MUX 27		Ref (B26fb)
+uart_clock_inst_counter7		(MC15	FB)  : MUX 29		Ref (B28fb)
+uart_clock_inst_counter3		(MC22	FB)  : MUX 31		Ref (C42fb)
+rx_byte2		(MC12	P)   : MUX 34		Ref (B25p)
+rx_byte3		(MC7	P)   : MUX 35		Ref (B20p)
+rx_inst_count2		(MC14	FB)  : MUX 39		Ref (B27fb)
+
+FanIn assignment for block C [25]
+{
+rx,rx_byte6,rx_inst_state0,rx_inst_count4,rx_inst_count0,rx_inst_state1,rx_inst_count3,rx_inst_state2,rx_inst_count1,rx_byte7,rx_inst_count2,
+stb,
+tx_inst_state0,tx_inst_bit_count2,tx_rdy,tx_inst_baud_count1,tx_inst_stb_ff,tx_inst_bit_count0,tx_inst_state1,tx_inst_bit_count1,
+uart_clock_inst_counter1,uart_clock_inst_counter2,uart_clock_inst_counter0,uart_clk,uart_clock_inst_counter3,
+}
+Multiplexer assignment for block C
+uart_clock_inst_counter1		(MC15	FB)  : MUX 0		Ref (C40fb)
+rx			(MC24	P)   : MUX 1		Ref (A1p)
+rx_byte6		(MC21	P)   : MUX 2		Ref (C46p)
+tx_inst_state0		(MC22	FB)  : MUX 3		Ref (C47fb)
+tx_inst_bit_count2		(MC12	FB)  : MUX 4		Ref (C37fb)
+rx_inst_state0		(MC11	FB)  : MUX 5		Ref (B32fb)
+uart_clock_inst_counter2		(MC14	FB)  : MUX 6		Ref (C39fb)
+tx_rdy			(MC1	P)   : MUX 9		Ref (A4p)
+tx_inst_baud_count1		(MC23	FB)  : MUX 10		Ref (D50fb)
+stb			(MC25	P)   : MUX 11		Ref (A3p)
+tx_inst_stb_ff		(MC13	FB)  : MUX 12		Ref (C38fb)
+rx_inst_count4		(MC10	FB)  : MUX 13		Ref (B31fb)
+rx_inst_count0		(MC2	FB)  : MUX 15		Ref (A12fb)
+rx_inst_state1		(MC20	FB)  : MUX 17		Ref (C45fb)
+rx_inst_count3		(MC9	FB)  : MUX 19		Ref (B29fb)
+tx_inst_bit_count0		(MC16	FB)  : MUX 21		Ref (C41fb)
+rx_inst_state2		(MC6	FB)  : MUX 22		Ref (B18fb)
+rx_inst_count1		(MC3	FB)  : MUX 23		Ref (A13fb)
+tx_inst_state1		(MC19	FB)  : MUX 25		Ref (C44fb)
+tx_inst_bit_count1		(MC18	FB)  : MUX 27		Ref (C43fb)
+uart_clock_inst_counter0		(MC5	FB)  : MUX 28		Ref (B17fb)
+uart_clk		(MC7	P)   : MUX 31		Ref (B19p)
+rx_byte7		(MC4	P)   : MUX 32		Ref (A14p)
+uart_clock_inst_counter3		(MC17	FB)  : MUX 33		Ref (C42fb)
+rx_inst_count2		(MC8	FB)  : MUX 39		Ref (B27fb)
+
+FanIn assignment for block D [20]
+{
+stb,
+tx_byte4,tx_inst_tx_byte_ff5,tx_inst_tx_byte_ff1,tx_inst_baud_count1,tx_byte5,tx_byte6,tx_inst_tx_byte_ff3,tx_byte3,tx_inst_tx_byte_ff4,tx_inst_tx_byte_ff6,tx_byte0,tx_inst_baud_count0,tx_inst_tx_byte_ff7,tx_byte7,tx_inst_tx_byte_ff0,tx_byte1,tx_byte2,tx_inst_tx_byte_ff2,
+uart_clk,
+}
+Multiplexer assignment for block D
+tx_byte4		(MC19	P)   : MUX 1		Ref (D52p)
+tx_inst_tx_byte_ff5		(MC6	FB)  : MUX 3		Ref (D58fb)
+stb			(MC12	P)   : MUX 7		Ref (A3p)
+tx_inst_tx_byte_ff1		(MC8	FB)  : MUX 9		Ref (D60fb)
+tx_inst_baud_count1		(MC2	FB)  : MUX 10		Ref (D50fb)
+tx_byte5		(MC17	P)   : MUX 11		Ref (D49p)
+tx_byte6		(MC18	P)   : MUX 13		Ref (D51p)
+tx_inst_tx_byte_ff3		(MC7	FB)  : MUX 15		Ref (D59fb)
+tx_byte3		(MC16	P)   : MUX 17		Ref (C37p)
+tx_inst_tx_byte_ff4		(MC4	FB)  : MUX 20		Ref (D55fb)
+tx_inst_tx_byte_ff6		(MC5	FB)  : MUX 22		Ref (D56fb)
+uart_clk		(MC1	P)   : MUX 23		Ref (B19p)
+tx_byte0		(MC14	P)   : MUX 25		Ref (C35p)
+tx_inst_baud_count0		(MC11	FB)  : MUX 27		Ref (D64fb)
+tx_inst_tx_byte_ff7		(MC3	FB)  : MUX 30		Ref (D54fb)
+tx_byte7		(MC20	P)   : MUX 31		Ref (D53p)
+tx_inst_tx_byte_ff0		(MC9	FB)  : MUX 33		Ref (D61fb)
+tx_byte1		(MC15	P)   : MUX 35		Ref (C36p)
+tx_byte2		(MC13	P)   : MUX 37		Ref (C33p)
+tx_inst_tx_byte_ff2		(MC10	FB)  : MUX 39		Ref (D63fb)
+
+Creating JEDEC file E:\REPOS\JSONTOCUPL\EXAMPLES\UART\WINCUPL\UART.jed ...
+
+PLCC44 programmed logic:
+-----------------------------------
+!JTCN104 = (uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q);
+
+!JTCN128 = (tx_inst_bit_count0.Q & tx_inst_bit_count1.Q);
+
+tx_inst_baud_count0.D = !tx_inst_baud_count0.Q;
+
+tx_inst_baud_count1.D = ((!tx_inst_baud_count0.Q & tx_inst_baud_count1.Q)
+	# (tx_inst_baud_count0.Q & !tx_inst_baud_count1.Q));
+
+uart_clock_inst_counter1.D = ((uart_clock_inst_counter0.Q & !uart_clock_inst_counter1.Q)
+	# (!uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q));
+
+!JTCN120 = (!rx_inst_state2.Q & rx_inst_state0.Q);
+
+!JTCN129 = (!tx_inst_bit_count1.Q & !tx_inst_bit_count0.Q);
+
+rx_rdy = (!rx_inst_state2.Q & !rx_inst_state0.Q & rx_inst_state1.Q);
+
+tx_inst_state1.D = ((!tx_inst_state0.Q & tx_inst_state1.Q)
+	# (tx_inst_state0.Q & !tx_inst_state1.Q));
+
+tx_inst_tx_byte_ff1.D = ((stb & tx_byte1)
+	# (!stb & tx_inst_tx_byte_ff1.Q));
+
+tx_inst_tx_byte_ff0.D = ((stb & tx_byte0)
+	# (!stb & tx_inst_tx_byte_ff0.Q));
+
+tx_inst_tx_byte_ff2.D = ((stb & tx_byte2)
+	# (!stb & tx_inst_tx_byte_ff2.Q));
+
+tx_inst_tx_byte_ff3.D = ((stb & tx_byte3)
+	# (!stb & tx_inst_tx_byte_ff3.Q));
+
+tx_inst_tx_byte_ff4.D = ((stb & tx_byte4)
+	# (!stb & tx_inst_tx_byte_ff4.Q));
+
+tx_inst_tx_byte_ff6.D = ((stb & tx_byte6)
+	# (!stb & tx_inst_tx_byte_ff6.Q));
+
+tx_inst_tx_byte_ff5.D = ((stb & tx_byte5)
+	# (!stb & tx_inst_tx_byte_ff5.Q));
+
+tx_inst_tx_byte_ff7.D = ((stb & tx_byte7)
+	# (!stb & tx_inst_tx_byte_ff7.Q));
+
+tx_rdy = (!tx_inst_state0.Q & !tx_inst_state1.Q);
+
+!JTCN101 = (!uart_clock_inst_counter0.Q & !uart_clock_inst_counter1.Q & !uart_clock_inst_counter2.Q & !uart_clock_inst_counter3.Q & uart_clock_inst_counter4.Q & !uart_clock_inst_counter5.Q & !uart_clock_inst_counter6.Q & uart_clock_inst_counter7.Q);
+
+!JTCN103 = (uart_clock_inst_counter2.Q & uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q);
+
+uart_clock_inst_counter2.D = ((!uart_clock_inst_counter2.Q & uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q)
+	# (JTCN104 & uart_clock_inst_counter2.Q));
+
+!JTCN124 = (tx_rdy & tx_inst_stb_ff.Q);
+
+!JTCN115 = (rx_inst_count2.Q & rx_inst_count0.Q & rx_inst_count1.Q);
+
+rx_inst_state2.D = (JTCN120 & !rx_inst_state1.Q & !rx);
+
+tx_inst_bit_count1.D = (JTCN128 & JTCN129 & !tx_inst_state0.Q & tx_inst_state1.Q);
+
+tx_inst_bit_count2.D = ((!tx_inst_bit_count2.Q & !tx_inst_state0.Q & tx_inst_state1.Q & tx_inst_bit_count0.Q & tx_inst_bit_count1.Q)
+	# (tx_inst_bit_count2.Q & JTCN128 & !tx_inst_state0.Q & tx_inst_state1.Q));
+
+uart_clk.D = ((!uart_clk.Q & !uart_clock_inst_counter0.Q & !uart_clock_inst_counter1.Q & !uart_clock_inst_counter2.Q & !uart_clock_inst_counter3.Q & uart_clock_inst_counter4.Q & !uart_clock_inst_counter5.Q & !uart_clock_inst_counter6.Q & uart_clock_inst_counter7.Q)
+	# (JTCN101 & uart_clk.Q));
+
+tx_inst_bit_count0.D = (!tx_inst_bit_count0.Q & !tx_inst_state0.Q & tx_inst_state1.Q);
+
+uart_clock_inst_counter0.D = (JTCN101 & !uart_clock_inst_counter0.Q);
+
+uart_clock_inst_counter3.D = ((!uart_clock_inst_counter3.Q & uart_clock_inst_counter2.Q & uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q)
+	# (JTCN103 & uart_clock_inst_counter3.Q));
+
+rx_inst_count1.D = ((rx_inst_count0.Q & !rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q)
+	# (!rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+!JTCN113 = (rx_inst_count3.Q & rx_inst_count2.Q & rx_inst_count0.Q & rx_inst_count1.Q);
+
+rx_inst_count0.D = (!rx_inst_count0.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q);
+
+rx_inst_rx_shifter1.D = (rx_inst_rx_shifter2.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q);
+
+rx_inst_count2.D = ((JTCN115 & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q & rx_inst_count0.Q & rx_inst_count1.Q)
+	# (JTCN115 & rx_inst_count2.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+rx_inst_rx_shifter0.D = (rx_inst_rx_shifter1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q);
+
+rx_inst_rx_shifter2.D = (rx & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q);
+
+tx = ((!tx_inst_bit_count2.Q & !tx_inst_bit_count1.Q & tx_inst_bit_count0.Q & tx_inst_state1.Q & tx_inst_tx_byte_ff1.Q)
+	# (!tx_inst_bit_count2.Q & tx_inst_bit_count1.Q & tx_inst_bit_count0.Q & tx_inst_state1.Q & tx_inst_tx_byte_ff3.Q)
+	# (!tx_inst_bit_count2.Q & tx_inst_bit_count1.Q & !tx_inst_bit_count0.Q & tx_inst_state1.Q & tx_inst_tx_byte_ff2.Q)
+	# (tx_inst_bit_count2.Q & tx_inst_bit_count1.Q & tx_inst_bit_count0.Q & tx_inst_state1.Q & tx_inst_tx_byte_ff7.Q)
+	# (tx_inst_state1.Q & tx_inst_state0.Q)
+	# (!tx_inst_state1.Q & !tx_inst_state0.Q)
+	# (tx_inst_bit_count2.Q & !tx_inst_bit_count1.Q & !tx_inst_bit_count0.Q & tx_inst_state1.Q & tx_inst_tx_byte_ff4.Q)
+	# (!tx_inst_bit_count2.Q & !tx_inst_bit_count1.Q & !tx_inst_bit_count0.Q & tx_inst_state1.Q & tx_inst_tx_byte_ff0.Q)
+	# (tx_inst_bit_count2.Q & tx_inst_bit_count1.Q & !tx_inst_bit_count0.Q & tx_inst_state1.Q & tx_inst_tx_byte_ff6.Q)
+	# (tx_inst_bit_count2.Q & !tx_inst_bit_count1.Q & tx_inst_bit_count0.Q & tx_inst_state1.Q & tx_inst_tx_byte_ff5.Q));
+
+tx_inst_state0.D = ((tx_inst_bit_count2.Q & tx_inst_bit_count0.Q & tx_inst_bit_count1.Q & !tx_inst_state0.Q & tx_inst_state1.Q)
+	# (tx_rdy & tx_inst_stb_ff.Q));
+
+!tx_inst_stb_ff.D = (!stb & JTCN124);
+
+!JTCN107 = (rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q);
+
+!JTCN111 = (rx_inst_count4.Q & rx_inst_count3.Q & rx_inst_count2.Q & rx_inst_count0.Q & rx_inst_count1.Q);
+
+!JTCN100 = (uart_clock_inst_counter4.Q & uart_clock_inst_counter3.Q & uart_clock_inst_counter2.Q & uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q);
+
+rx_inst_count3.D = ((JTCN113 & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q & rx_inst_count2.Q & rx_inst_count0.Q & rx_inst_count1.Q)
+	# (JTCN113 & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q & rx_inst_count3.Q));
+
+rx_byte0.D = ((JTCN107 & rx_byte0.Q)
+	# (rx_byte1.Q & rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+rx_byte1.D = ((JTCN107 & rx_byte1.Q)
+	# (rx_byte2.Q & rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+rx_byte2.D = ((JTCN107 & rx_byte2.Q)
+	# (rx_byte3.Q & rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+rx_byte3.D = ((JTCN107 & rx_byte3.Q)
+	# (rx_byte4.Q & rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+rx_byte6.D = ((JTCN107 & rx_byte6.Q)
+	# (rx_byte7.Q & rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+rx_byte4.D = ((JTCN107 & rx_byte4.Q)
+	# (rx_byte5.Q & rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+rx_byte5.D = ((JTCN107 & rx_byte5.Q)
+	# (rx_byte6.Q & rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+rx_byte7.D = ((JTCN107 & rx_byte7.Q)
+	# (rx_inst_rx_shifter1.Q & rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q & rx_inst_rx_shifter2.Q)
+	# (rx_inst_rx_shifter1.Q & rx_inst_rx_shifter0.Q & rx_inst_count0.Q & rx_inst_count1.Q & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+!JTCN106 = (uart_clock_inst_counter5.Q & uart_clock_inst_counter4.Q & uart_clock_inst_counter3.Q & uart_clock_inst_counter2.Q & uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q);
+
+uart_clock_inst_counter5.D = ((!uart_clock_inst_counter5.Q & uart_clock_inst_counter4.Q & uart_clock_inst_counter3.Q & uart_clock_inst_counter2.Q & uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q)
+	# (JTCN100 & uart_clock_inst_counter5.Q));
+
+rx_inst_state1.D = ((!rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q & rx_inst_count4.Q & rx_inst_count3.Q & rx_inst_count2.Q & rx_inst_count0.Q & rx_inst_count1.Q)
+	# (!rx_inst_state1.Q & rx_inst_state2.Q & rx_inst_state0.Q & !rx));
+
+uart_clock_inst_counter4.D = ((JTCN100 & JTCN101 & uart_clock_inst_counter4.Q)
+	# (JTCN100 & JTCN101 & uart_clock_inst_counter3.Q & uart_clock_inst_counter2.Q & uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q));
+
+rx_inst_state0.D = ((rx_inst_state1.Q & rx_inst_state2.Q & rx_inst_state0.Q)
+	# (!rx_inst_state1.Q & rx_inst_state2.Q & !rx)
+	# (JTCN111 & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+rx_inst_count4.D = ((JTCN111 & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q & rx_inst_count4.Q)
+	# (rx_inst_count3.Q & rx_inst_count2.Q & rx_inst_count0.Q & rx_inst_count1.Q & JTCN111 & !rx_inst_state1.Q & !rx_inst_state2.Q & rx_inst_state0.Q));
+
+uart_clock_inst_counter6.D = ((!uart_clock_inst_counter6.Q & uart_clock_inst_counter5.Q & uart_clock_inst_counter4.Q & uart_clock_inst_counter3.Q & uart_clock_inst_counter2.Q & uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q)
+	# (JTCN106 & uart_clock_inst_counter6.Q));
+
+uart_clock_inst_counter7.D = ((JTCN101 & !uart_clock_inst_counter7.Q & uart_clock_inst_counter6.Q & uart_clock_inst_counter5.Q & uart_clock_inst_counter4.Q & uart_clock_inst_counter3.Q & uart_clock_inst_counter2.Q & uart_clock_inst_counter0.Q & uart_clock_inst_counter1.Q)
+	# (JTCN101 & uart_clock_inst_counter7.Q & JTCN106)
+	# (JTCN101 & uart_clock_inst_counter7.Q & !uart_clock_inst_counter6.Q));
+
+tx_inst_baud_count0.C = uart_clk.Q;
+
+tx_inst_baud_count0.AR = !res_n;
+
+tx_inst_baud_count1.C = uart_clk.Q;
+
+tx_inst_baud_count1.AR = !res_n;
+
+uart_clock_inst_counter1.C = clk;
+
+uart_clock_inst_counter1.AR = !res_n;
+
+tx_inst_state1.C = tx_inst_baud_count1.Q;
+
+tx_inst_state1.AR = !res_n;
+
+tx_inst_tx_byte_ff1.C = uart_clk.Q;
+
+tx_inst_tx_byte_ff1.AR = !res_n;
+
+tx_inst_tx_byte_ff0.C = uart_clk.Q;
+
+tx_inst_tx_byte_ff0.AR = !res_n;
+
+tx_inst_tx_byte_ff2.C = uart_clk.Q;
+
+tx_inst_tx_byte_ff2.AR = !res_n;
+
+tx_inst_tx_byte_ff3.C = uart_clk.Q;
+
+tx_inst_tx_byte_ff3.AR = !res_n;
+
+tx_inst_tx_byte_ff4.C = uart_clk.Q;
+
+tx_inst_tx_byte_ff4.AR = !res_n;
+
+tx_inst_tx_byte_ff6.C = uart_clk.Q;
+
+tx_inst_tx_byte_ff6.AR = !res_n;
+
+tx_inst_tx_byte_ff5.C = uart_clk.Q;
+
+tx_inst_tx_byte_ff5.AR = !res_n;
+
+tx_inst_tx_byte_ff7.C = uart_clk.Q;
+
+tx_inst_tx_byte_ff7.AR = !res_n;
+
+uart_clock_inst_counter2.C = clk;
+
+uart_clock_inst_counter2.AR = !res_n;
+
+rx_inst_state2.C = uart_clk.Q;
+
+rx_inst_state2.AR = !res_n;
+
+tx_inst_bit_count1.C = tx_inst_baud_count1.Q;
+
+tx_inst_bit_count1.AR = !res_n;
+
+tx_inst_bit_count2.C = tx_inst_baud_count1.Q;
+
+tx_inst_bit_count2.AR = !res_n;
+
+uart_clk.C = clk;
+
+uart_clk.AR = !res_n;
+
+tx_inst_bit_count0.C = tx_inst_baud_count1.Q;
+
+tx_inst_bit_count0.AR = !res_n;
+
+uart_clock_inst_counter0.C = clk;
+
+uart_clock_inst_counter0.AR = !res_n;
+
+uart_clock_inst_counter3.C = clk;
+
+uart_clock_inst_counter3.AR = !res_n;
+
+rx_inst_count1.C = uart_clk.Q;
+
+rx_inst_count1.AR = !res_n;
+
+rx_inst_count0.C = uart_clk.Q;
+
+rx_inst_count0.AR = !res_n;
+
+rx_inst_rx_shifter1.C = uart_clk.Q;
+
+rx_inst_rx_shifter1.AR = !res_n;
+
+rx_inst_count2.C = uart_clk.Q;
+
+rx_inst_count2.AR = !res_n;
+
+rx_inst_rx_shifter0.C = uart_clk.Q;
+
+rx_inst_rx_shifter0.AR = !res_n;
+
+rx_inst_rx_shifter2.C = uart_clk.Q;
+
+rx_inst_rx_shifter2.AR = !res_n;
+
+tx_inst_state0.C = tx_inst_baud_count1.Q;
+
+tx_inst_state0.AR = !res_n;
+
+tx_inst_stb_ff.C = uart_clk.Q;
+
+tx_inst_stb_ff.AR = !res_n;
+
+rx_inst_count3.C = uart_clk.Q;
+
+rx_inst_count3.AR = !res_n;
+
+rx_byte0.C = uart_clk.Q;
+
+rx_byte0.AR = !res_n;
+
+rx_byte1.C = uart_clk.Q;
+
+rx_byte1.AR = !res_n;
+
+rx_byte2.C = uart_clk.Q;
+
+rx_byte2.AR = !res_n;
+
+rx_byte3.C = uart_clk.Q;
+
+rx_byte3.AR = !res_n;
+
+rx_byte6.C = uart_clk.Q;
+
+rx_byte6.AR = !res_n;
+
+rx_byte4.C = uart_clk.Q;
+
+rx_byte4.AR = !res_n;
+
+rx_byte5.C = uart_clk.Q;
+
+rx_byte5.AR = !res_n;
+
+rx_byte7.C = uart_clk.Q;
+
+rx_byte7.AR = !res_n;
+
+uart_clock_inst_counter5.C = clk;
+
+uart_clock_inst_counter5.AR = !res_n;
+
+rx_inst_state1.C = uart_clk.Q;
+
+rx_inst_state1.AR = !res_n;
+
+uart_clock_inst_counter4.C = clk;
+
+uart_clock_inst_counter4.AR = !res_n;
+
+rx_inst_state0.C = uart_clk.Q;
+
+rx_inst_state0.AR = !res_n;
+
+rx_inst_count4.C = uart_clk.Q;
+
+rx_inst_count4.AR = !res_n;
+
+uart_clock_inst_counter6.C = clk;
+
+uart_clock_inst_counter6.AR = !res_n;
+
+uart_clock_inst_counter7.C = clk;
+
+uart_clock_inst_counter7.AR = !res_n;
+
+
+PLCC44 Pin/Node Placement:
+------------------------------------
+Pin 1  = res_n;
+Pin 4  = tx; /* MC 16 */
+Pin 5  = rx_byte7; /* MC 14 */
+Pin 6  = rx_byte1; /* MC 11 */
+Pin 7  = TDI; /* MC 8 */
+Pin 8  = rx_rdy; /* MC 5 */
+Pin 9  = tx_rdy; /* MC 4 */
+Pin 11 = stb; /* MC  3 */
+Pin 12 = rx; /* MC  1 */
+Pin 13 = TMS; /* MC 32 */ 
+Pin 14 = rx_byte0; /* MC 30 */ 
+Pin 16 = rx_byte2; /* MC 25 */ 
+Pin 17 = rx_byte5; /* MC 24 */ 
+Pin 18 = rx_byte4; /* MC 21 */ 
+Pin 19 = rx_byte3; /* MC 20 */ 
+Pin 20 = uart_clk; /* MC 19 */ 
+Pin 24 = tx_byte2; /* MC 33 */ 
+Pin 25 = tx_byte0; /* MC 35 */ 
+Pin 26 = tx_byte1; /* MC 36 */ 
+Pin 27 = tx_byte3; /* MC 37 */ 
+Pin 31 = rx_byte6; /* MC 46 */ 
+Pin 32 = TCK; /* MC 48 */ 
+Pin 33 = tx_byte5; /* MC 49 */ 
+Pin 34 = tx_byte6; /* MC 51 */ 
+Pin 36 = tx_byte4; /* MC 52 */ 
+Pin 37 = tx_byte7; /* MC 53 */ 
+Pin 38 = TDO; /* MC 56 */ 
+Pin 43 = clk;
+PINNODE 314 = JTCN107; /* MC 14 Foldback */
+PINNODE 325 = JTCN106; /* MC 25 Foldback */
+PINNODE 326 = JTCN100; /* MC 26 Foldback */
+PINNODE 327 = JTCN111; /* MC 27 Foldback */
+PINNODE 328 = JTCN107; /* MC 28 Foldback */
+PINNODE 329 = JTCN113; /* MC 29 Foldback */
+PINNODE 330 = JTCN115; /* MC 30 Foldback */
+PINNODE 331 = JTCN101; /* MC 31 Foldback */
+PINNODE 332 = JTCN120; /* MC 32 Foldback */
+PINNODE 337 = JTCN104; /* MC 37 Foldback */
+PINNODE 343 = JTCN107; /* MC 43 Foldback */
+PINNODE 344 = JTCN124; /* MC 44 Foldback */
+PINNODE 345 = JTCN103; /* MC 45 Foldback */
+PINNODE 346 = JTCN129; /* MC 46 Foldback */
+PINNODE 347 = JTCN128; /* MC 47 Foldback */
+PINNODE 609 = rx_inst_rx_shifter1; /* MC 9 Feedback */
+PINNODE 610 = rx_inst_rx_shifter0; /* MC 10 Feedback */
+PINNODE 612 = rx_inst_count0; /* MC 12 Feedback */
+PINNODE 613 = rx_inst_count1; /* MC 13 Feedback */
+PINNODE 617 = uart_clock_inst_counter0; /* MC 17 Feedback */
+PINNODE 618 = rx_inst_state2; /* MC 18 Feedback */
+PINNODE 622 = uart_clock_inst_counter5; /* MC 22 Feedback */
+PINNODE 623 = uart_clock_inst_counter6; /* MC 23 Feedback */
+PINNODE 626 = uart_clock_inst_counter4; /* MC 26 Feedback */
+PINNODE 627 = rx_inst_count2; /* MC 27 Feedback */
+PINNODE 628 = uart_clock_inst_counter7; /* MC 28 Feedback */
+PINNODE 629 = rx_inst_count3; /* MC 29 Feedback */
+PINNODE 631 = rx_inst_count4; /* MC 31 Feedback */
+PINNODE 632 = rx_inst_state0; /* MC 32 Feedback */
+PINNODE 634 = rx_inst_rx_shifter2; /* MC 34 Feedback */
+PINNODE 637 = tx_inst_bit_count2; /* MC 37 Feedback */
+PINNODE 638 = tx_inst_stb_ff; /* MC 38 Feedback */
+PINNODE 639 = uart_clock_inst_counter2; /* MC 39 Feedback */
+PINNODE 640 = uart_clock_inst_counter1; /* MC 40 Feedback */
+PINNODE 641 = tx_inst_bit_count0; /* MC 41 Feedback */
+PINNODE 642 = uart_clock_inst_counter3; /* MC 42 Feedback */
+PINNODE 643 = tx_inst_bit_count1; /* MC 43 Feedback */
+PINNODE 644 = tx_inst_state1; /* MC 44 Feedback */
+PINNODE 645 = rx_inst_state1; /* MC 45 Feedback */
+PINNODE 647 = tx_inst_state0; /* MC 47 Feedback */
+PINNODE 650 = tx_inst_baud_count1; /* MC 50 Feedback */
+PINNODE 654 = tx_inst_tx_byte_ff7; /* MC 54 Feedback */
+PINNODE 655 = tx_inst_tx_byte_ff4; /* MC 55 Feedback */
+PINNODE 656 = tx_inst_tx_byte_ff6; /* MC 56 Feedback */
+PINNODE 658 = tx_inst_tx_byte_ff5; /* MC 58 Feedback */
+PINNODE 659 = tx_inst_tx_byte_ff3; /* MC 59 Feedback */
+PINNODE 660 = tx_inst_tx_byte_ff1; /* MC 60 Feedback */
+PINNODE 661 = tx_inst_tx_byte_ff0; /* MC 61 Feedback */
+PINNODE 663 = tx_inst_tx_byte_ff2; /* MC 63 Feedback */
+PINNODE 664 = tx_inst_baud_count0; /* MC 64 Feedback */
+
+** Resource Usage **
+
+
+DCERP Field = Summary of Allocations.
+|||||
+|||||_Preset [p,-]       ==  p = PT preset, - No Preset.
+||||
+||||__Reset [g,r,-]      ==  g= Global AR, r = PT reset, - No reset.
+|||
+|||___Clock Enable [e,-] ==  e = Product Term, - always enabled, - none.
+||
+||____Clock [c,g,-],     ==  c = Product term, g = Global term, - No Clock.
+|
+|_____Type [C,D,L,T],    ==  Register type C= combin, D=dff, L=latch, T=tff.
+
+For input only = INPUT.
+
+MCell Pin# Oe   PinDrive  DCERP  FBDrive                  DCERP  Foldback  CascadeOut     TotPT output_slew
+MC1   12   --   rx        INPUT  --                              --        --             0     slow
+MC2   0         --               --                              --        --             0     slow
+MC3   11   --   stb       INPUT  --                              --        --             0     slow
+MC4   9    on   tx_rdy    C----  --                              --        --             1     slow
+MC5   8    on   rx_rdy    C----  --                              --        --             1     slow
+MC6   0         --               --                              --        --             0     slow
+MC7   0         --               --                              --        --             0     slow
+MC8   7    --   TDI       INPUT  --                              --        --             0     slow
+MC9   0         --               rx_inst_rx_shifter1      Dc-g-  --        --             2     slow
+MC10  0         --               rx_inst_rx_shifter0      Dc-g-  --        --             2     slow
+MC11  6    on   rx_byte1  Dc-g-  --                              --        --             3     slow
+MC12  0         --               rx_inst_count0           Dc-g-  --        --             2     slow
+MC13  0         --               rx_inst_count1           Dc-g-  --        --             3     slow
+MC14  5    on   rx_byte7  Dc-g-  --                              JTCN107   --             5     slow
+MC15  0         --               --                              NA        -> tx          5     slow
+MC16  4    on   tx        C----  --                              NA        --             5     slow
+MC17  21        --               uart_clock_inst_counter0 Dg-g-  --        --             1     slow
+MC18  0         --               rx_inst_state2           Dc-g-  --        --             2     slow
+MC19  20   on   uart_clk  Dg-g-  --                              --        --             2     slow
+MC20  19   on   rx_byte3  Dc-g-  --                              --        --             3     slow
+MC21  18   on   rx_byte4  Dc-g-  --                              --        --             3     slow
+MC22  0         --               uart_clock_inst_counter5 Dg-g-  --        --             2     slow
+MC23  0         --               uart_clock_inst_counter6 Dg-g-  --        --             2     slow
+MC24  17   on   rx_byte5  Dc-g-  --                              --        --             3     slow
+MC25  16   on   rx_byte2  Dc-g-  --                              JTCN106   --             4     slow
+MC26  0         --               uart_clock_inst_counter4 Dg-g-  JTCN100   --             3     slow
+MC27  0         --               rx_inst_count2           Dc-g-  JTCN111   --             4     slow
+MC28  0         --               uart_clock_inst_counter7 Dg-g-  JTCN107   --             4     slow
+MC29  0         --               rx_inst_count3           Dc-g-  JTCN113   --             4     slow
+MC30  14   on   rx_byte0  Dc-g-  --                              JTCN115   --             4     slow
+MC31  0         --               rx_inst_count4           Dc-g-  JTCN101   --             4     slow
+MC32  13   --   TMS       INPUT  rx_inst_state0           Dc-g-  JTCN120   --             5     slow
+MC33  24   --   tx_byte2  INPUT  --                              --        --             0     slow
+MC34  0         --               rx_inst_rx_shifter2      Dc-g-  --        --             2     slow
+MC35  25   --   tx_byte0  INPUT  --                              --        --             0     slow
+MC36  26   --   tx_byte1  INPUT  --                              --        --             0     slow
+MC37  27   --   tx_byte3  INPUT  tx_inst_bit_count2       Dc-g-  JTCN104   --             4     slow
+MC38  0         --               tx_inst_stb_ff           Dc-g-  --        --             2     slow
+MC39  0         --               uart_clock_inst_counter2 Dg-g-  --        --             2     slow
+MC40  28        --               uart_clock_inst_counter1 Dg-g-  --        --             2     slow
+MC41  29        --               tx_inst_bit_count0       Dc-g-  --        --             2     slow
+MC42  0         --               uart_clock_inst_counter3 Dg-g-  --        --             2     slow
+MC43  0         --               tx_inst_bit_count1       Dc-g-  JTCN107   --             3     slow
+MC44  0         --               tx_inst_state1           Dc-g-  JTCN124   --             4     slow
+MC45  0         --               rx_inst_state1           Dc-g-  JTCN103   --             4     slow
+MC46  31   on   rx_byte6  Dc-g-  --                              JTCN129   --             4     slow
+MC47  0         --               tx_inst_state0           Dc-g-  JTCN128   --             4     slow
+MC48  32   --   TCK       INPUT  --                              --        --             0     slow
+MC49  33   --   tx_byte5  INPUT  --                              --        --             0     slow
+MC50  0         --               tx_inst_baud_count1      Dc-g-  --        --             3     slow
+MC51  34   --   tx_byte6  INPUT  --                              --        --             0     slow
+MC52  36   --   tx_byte4  INPUT  --                              --        --             0     slow
+MC53  37   --   tx_byte7  INPUT  --                              --        --             0     slow
+MC54  0         --               tx_inst_tx_byte_ff7      Dc-g-  --        --             3     slow
+MC55  0         --               tx_inst_tx_byte_ff4      Dc-g-  --        --             3     slow
+MC56  38   --   TDO       INPUT  tx_inst_tx_byte_ff6      Dc-g-  --        --             3     slow
+MC57  39        --               --                              --        --             0     slow
+MC58  0         --               tx_inst_tx_byte_ff5      Dc-g-  --        --             3     slow
+MC59  0         --               tx_inst_tx_byte_ff3      Dc-g-  --        --             3     slow
+MC60  0         --               tx_inst_tx_byte_ff1      Dc-g-  --        --             3     slow
+MC61  0         --               tx_inst_tx_byte_ff0      Dc-g-  --        --             3     slow
+MC62  40        --               --                              --        --             0     slow
+MC63  0         --               tx_inst_tx_byte_ff2      Dc-g-  --        --             3     slow
+MC64  41        --               tx_inst_baud_count0      Dc-g-  --        --             2     slow
+MC0   2         --               --                              --        --             0     slow
+MC0   1         res_n     INPUT  --                              --        --             0     slow
+MC0   44        --               --                              --        --             0     slow
+MC0   43        clk       INPUT  --                              --        --             0     slow
+
+Logic Array Block	Logic Cells	I/O Pins	Foldbacks	TotalPT		FanIN	Cascades
+A: LC1	- LC16		9/16(56%)	8/16(50%)	1/16(6%)	29/80(36%)	(25)	1
+B: LC17	- LC32		16/16(100%)	7/16(43%)	8/16(50%)	50/80(62%)	(25)	0
+C: LC33	- LC48		12/16(75%)	6/16(37%)	6/16(37%)	35/80(43%)	(25)	0
+D: LC49	- LC64		10/16(62%)	5/16(31%)	0/16(0%)	29/80(36%)	(20)	0
+
+Total dedicated input used:	2/4 	(50%)
+Total I/O pins used		26/32 	(81%)
+Total Logic cells used 		48/64 	(75%)
+Total Flip-Flop used 		44/64 	(68%)
+Total Foldback logic used 	15/64 	(23%)
+Total Nodes+FB/MCells 		62/64 	(96%)
+Total cascade used 		1
+Total input pins 		16
+Total output pins 		12
+Total Pts 			143
+Creating pla file E:\REPOS\JSONTOCUPL\EXAMPLES\UART\WINCUPL\UART.tt3 with 0 inputs 0 outputs, 0 pins 0 nodes and 0 pterms...
+
+----------------  End fitter, Design FITS
+$Device PLCC44 fits 
+FIT1504 completed in 0.00 seconds

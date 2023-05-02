@@ -1,0 +1,795 @@
+%SIGNAL
+PIN   0 =  JTCN98 
+PIN   0 =  JTCN99 
+PIN   0 =  JTCN100 
+PIN   0 =  JTCN101 
+PIN   0 =  JTCN102 
+PIN   0 =  JTCN103 
+PIN   0 =  JTCN104 
+PIN   0 =  JTCN105 
+PIN   0 =  JTCN106 
+PIN   0 =  JTCN107 
+PIN   0 =  JTCN108 
+PIN   0 =  JTCN109 
+PIN   0 =  JTCN110 
+PIN   0 =  JTCN111 
+PIN   0 =  JTCN112 
+PIN   0 =  JTCN113 
+PIN   0 =  JTCN114 
+PIN   0 =  JTCN115 
+PIN   0 =  JTCN116 
+PIN   0 =  JTCN117 
+PIN   0 =  JTCN118 
+PIN   0 =  JTCN119 
+PIN   0 =  JTCN120 
+PIN   0 =  JTCN121 
+PIN   0 =  JTCN122 
+PIN   0 =  JTCN123 
+PIN   0 =  JTCN124 
+PIN   0 =  JTCN125 
+PIN   0 =  JTCN127 
+PIN   0 =  JTCN128 
+PIN   0 =  JTCN129 
+PIN   0 =  JTCN130 
+PIN   0 =  JTCN131 
+PIN   0 =  JTCN132 
+PIN   0 =  JTCN133 
+PIN   0 =  clk 
+PIN   0 =  res_n 
+PIN   0 =  rx 
+PIN   0 =  rx_byte0 
+PIN   0 =  rx_byte1 
+PIN   0 =  rx_byte2 
+PIN   0 =  rx_byte3 
+PIN   0 =  rx_byte4 
+PIN   0 =  rx_byte5 
+PIN   0 =  rx_byte6 
+PIN   0 =  rx_byte7 
+PIN   0 =  rx_inst_count0 
+PIN   0 =  rx_inst_count1 
+PIN   0 =  rx_inst_count2 
+PIN   0 =  rx_inst_count3 
+PIN   0 =  rx_inst_count4 
+PIN   0 =  rx_inst_rx_shifter0 
+PIN   0 =  rx_inst_rx_shifter1 
+PIN   0 =  rx_inst_rx_shifter2 
+PIN   0 =  rx_inst_state0 
+PIN   0 =  rx_inst_state1 
+PIN   0 =  rx_inst_state2 
+PIN   0 =  rx_rdy 
+PIN   0 =  stb 
+PIN   0 =  tx 
+PIN   0 =  tx_byte0 
+PIN   0 =  tx_byte1 
+PIN   0 =  tx_byte2 
+PIN   0 =  tx_byte3 
+PIN   0 =  tx_byte4 
+PIN   0 =  tx_byte5 
+PIN   0 =  tx_byte6 
+PIN   0 =  tx_byte7 
+PIN   0 =  tx_inst_baud_count0 
+PIN   0 =  tx_inst_baud_count1 
+PIN   0 =  tx_inst_bit_count0 
+PIN   0 =  tx_inst_bit_count1 
+PIN   0 =  tx_inst_bit_count2 
+PIN   0 =  tx_inst_state0 
+PIN   0 =  tx_inst_state1 
+PIN   0 =  tx_inst_stb_ff 
+PIN   0 =  tx_inst_tx_byte_ff0 
+PIN   0 =  tx_inst_tx_byte_ff1 
+PIN   0 =  tx_inst_tx_byte_ff2 
+PIN   0 =  tx_inst_tx_byte_ff3 
+PIN   0 =  tx_inst_tx_byte_ff4 
+PIN   0 =  tx_inst_tx_byte_ff5 
+PIN   0 =  tx_inst_tx_byte_ff6 
+PIN   0 =  tx_inst_tx_byte_ff7 
+PIN   0 =  tx_rdy 
+PIN   0 =  uart_clk 
+PIN   0 =  uart_clock_inst_counter0 
+PIN   0 =  uart_clock_inst_counter1 
+PIN   0 =  uart_clock_inst_counter2 
+PIN   0 =  uart_clock_inst_counter3 
+PIN   0 =  uart_clock_inst_counter4 
+PIN   0 =  uart_clock_inst_counter5 
+PIN   0 =  uart_clock_inst_counter6 
+PIN   0 =  uart_clock_inst_counter7 
+%END
+
+%FIELD
+%END
+
+%EQUATION
+JTCN98 =>
+    !res_n
+
+JTCN99 =>
+    JTCN105 & !uart_clock_inst_counter1 & !uart_clock_inst_counter2 & !uart_clock_inst_counter3 & uart_clock_inst_counter4 & !uart_clock_inst_counter5 & !uart_clock_inst_counter6 & uart_clock_inst_counter7
+
+JTCN100 =>
+    JTCN102 & uart_clock_inst_counter4
+
+JTCN101 =>
+    !JTCN99
+
+JTCN102 =>
+    JTCN103 & uart_clock_inst_counter3
+
+JTCN103 =>
+    JTCN104 & uart_clock_inst_counter2
+
+JTCN104 =>
+    uart_clock_inst_counter0 & uart_clock_inst_counter1
+
+JTCN105 =>
+    !uart_clock_inst_counter0
+
+JTCN106 =>
+    JTCN100 & uart_clock_inst_counter5
+
+JTCN107 =>
+    !JTCN108
+
+JTCN108 =>
+    JTCN109 & JTCN117
+
+JTCN109 =>
+    JTCN110 & JTCN120
+
+JTCN110 =>
+    !rx_inst_state1
+
+JTCN111 =>
+    JTCN114 & rx_inst_count4
+
+JTCN112 =>
+    JTCN109 & !JTCN111
+
+JTCN113 =>
+    !JTCN114
+
+JTCN114 =>
+    JTCN116 & rx_inst_count3
+
+JTCN115 =>
+    !JTCN116
+
+JTCN116 =>
+    JTCN117 & rx_inst_count2
+
+JTCN117 =>
+    rx_inst_count0 & rx_inst_count1
+
+JTCN118 =>
+    JTCN110 & !rx
+
+JTCN119 =>
+    rx_inst_state0 & rx_inst_state2
+
+JTCN120 =>
+    JTCN121 & rx_inst_state0
+
+JTCN121 =>
+    !rx_inst_state2
+
+JTCN122 =>
+    JTCN127 & tx_inst_state1
+
+JTCN123 =>
+    !tx_inst_state0 & tx_inst_state1
+  # tx_inst_state0 & !tx_inst_state1
+
+JTCN124 =>
+    !tx_inst_stb_ff
+  # !tx_rdy
+
+JTCN125 =>
+    !stb
+
+JTCN127 =>
+    !tx_inst_state0
+
+JTCN128 =>
+    tx_inst_bit_count0 & tx_inst_bit_count1
+
+JTCN129 =>
+    JTCN130 & JTCN131
+
+JTCN130 =>
+    !tx_inst_bit_count1
+
+JTCN131 =>
+    !tx_inst_bit_count0
+
+JTCN132 =>
+    JTCN122 & JTCN131
+
+JTCN133 =>
+    !tx_inst_bit_count2
+
+rx_byte0.d  =>
+    JTCN108 & rx_byte1
+  # JTCN107 & rx_byte0
+
+rx_byte0.ap  =>
+    0 
+
+rx_byte0.ar  =>
+    JTCN98
+
+rx_byte0.ck  =>
+    uart_clk
+
+rx_byte1.d  =>
+    JTCN108 & rx_byte2
+  # JTCN107 & rx_byte1
+
+rx_byte1.ap  =>
+    0 
+
+rx_byte1.ar  =>
+    JTCN98
+
+rx_byte1.ck  =>
+    uart_clk
+
+rx_byte2.d  =>
+    JTCN108 & rx_byte3
+  # JTCN107 & rx_byte2
+
+rx_byte2.ap  =>
+    0 
+
+rx_byte2.ar  =>
+    JTCN98
+
+rx_byte2.ck  =>
+    uart_clk
+
+rx_byte3.d  =>
+    JTCN108 & rx_byte4
+  # JTCN107 & rx_byte3
+
+rx_byte3.ap  =>
+    0 
+
+rx_byte3.ar  =>
+    JTCN98
+
+rx_byte3.ck  =>
+    uart_clk
+
+rx_byte4.d  =>
+    JTCN108 & rx_byte5
+  # JTCN107 & rx_byte4
+
+rx_byte4.ap  =>
+    0 
+
+rx_byte4.ar  =>
+    JTCN98
+
+rx_byte4.ck  =>
+    uart_clk
+
+rx_byte5.d  =>
+    JTCN108 & rx_byte6
+  # JTCN107 & rx_byte5
+
+rx_byte5.ap  =>
+    0 
+
+rx_byte5.ar  =>
+    JTCN98
+
+rx_byte5.ck  =>
+    uart_clk
+
+rx_byte6.d  =>
+    JTCN108 & rx_byte7
+  # JTCN107 & rx_byte6
+
+rx_byte6.ap  =>
+    0 
+
+rx_byte6.ar  =>
+    JTCN98
+
+rx_byte6.ck  =>
+    uart_clk
+
+rx_byte7.d  =>
+    JTCN107 & rx_byte7
+  # JTCN108 & rx_inst_rx_shifter1 & rx_inst_rx_shifter2
+  # JTCN108 & rx_inst_rx_shifter0 & rx_inst_rx_shifter1
+
+rx_byte7.ap  =>
+    0 
+
+rx_byte7.ar  =>
+    JTCN98
+
+rx_byte7.ck  =>
+    uart_clk
+
+rx_inst_count0.d  =>
+    JTCN109 & !rx_inst_count0
+
+rx_inst_count0.ap  =>
+    0 
+
+rx_inst_count0.ar  =>
+    JTCN98
+
+rx_inst_count0.ck  =>
+    uart_clk
+
+rx_inst_count1.d  =>
+    JTCN109 & !rx_inst_count0 & rx_inst_count1
+  # JTCN109 & rx_inst_count0 & !rx_inst_count1
+
+rx_inst_count1.ap  =>
+    0 
+
+rx_inst_count1.ar  =>
+    JTCN98
+
+rx_inst_count1.ck  =>
+    uart_clk
+
+rx_inst_count2.d  =>
+    JTCN109 & JTCN115 & JTCN117
+  # JTCN109 & JTCN115 & rx_inst_count2
+
+rx_inst_count2.ap  =>
+    0 
+
+rx_inst_count2.ar  =>
+    JTCN98
+
+rx_inst_count2.ck  =>
+    uart_clk
+
+rx_inst_count3.d  =>
+    JTCN109 & JTCN113 & !JTCN115
+  # JTCN109 & JTCN113 & rx_inst_count3
+
+rx_inst_count3.ap  =>
+    0 
+
+rx_inst_count3.ar  =>
+    JTCN98
+
+rx_inst_count3.ck  =>
+    uart_clk
+
+rx_inst_count4.d  =>
+    JTCN112 & rx_inst_count4
+  # JTCN112 & !JTCN113
+
+rx_inst_count4.ap  =>
+    0 
+
+rx_inst_count4.ar  =>
+    JTCN98
+
+rx_inst_count4.ck  =>
+    uart_clk
+
+rx_inst_rx_shifter0.d  =>
+    JTCN109 & rx_inst_rx_shifter1
+
+rx_inst_rx_shifter0.ap  =>
+    0 
+
+rx_inst_rx_shifter0.ar  =>
+    JTCN98
+
+rx_inst_rx_shifter0.ck  =>
+    uart_clk
+
+rx_inst_rx_shifter1.d  =>
+    JTCN109 & rx_inst_rx_shifter2
+
+rx_inst_rx_shifter1.ap  =>
+    0 
+
+rx_inst_rx_shifter1.ar  =>
+    JTCN98
+
+rx_inst_rx_shifter1.ck  =>
+    uart_clk
+
+rx_inst_rx_shifter2.d  =>
+    JTCN109 & rx
+
+rx_inst_rx_shifter2.ap  =>
+    0 
+
+rx_inst_rx_shifter2.ar  =>
+    JTCN98
+
+rx_inst_rx_shifter2.ck  =>
+    uart_clk
+
+rx_inst_state0.d  =>
+    JTCN118 & rx_inst_state2
+  # JTCN112
+  # JTCN119 & rx_inst_state1
+
+rx_inst_state0.ap  =>
+    0 
+
+rx_inst_state0.ar  =>
+    JTCN98
+
+rx_inst_state0.ck  =>
+    uart_clk
+
+rx_inst_state1.d  =>
+    JTCN109 & JTCN111
+  # JTCN118 & JTCN119
+
+rx_inst_state1.ap  =>
+    0 
+
+rx_inst_state1.ar  =>
+    JTCN98
+
+rx_inst_state1.ck  =>
+    uart_clk
+
+rx_inst_state2.d  =>
+    JTCN118 & !JTCN120
+
+rx_inst_state2.ap  =>
+    0 
+
+rx_inst_state2.ar  =>
+    JTCN98
+
+rx_inst_state2.ck  =>
+    uart_clk
+
+rx_rdy =>
+    JTCN121 & !rx_inst_state0 & rx_inst_state1
+
+tx =>
+    JTCN122 & JTCN129 & tx_inst_bit_count2 & tx_inst_tx_byte_ff4
+  # JTCN122 & JTCN129 & JTCN133 & tx_inst_tx_byte_ff0
+  # JTCN122 & JTCN130 & tx_inst_bit_count0 & tx_inst_tx_byte_ff1 & tx_inst_tx_byte_ff5
+  # JTCN122 & JTCN130 & !JTCN133 & tx_inst_bit_count0 & tx_inst_tx_byte_ff5
+  # JTCN122 & JTCN130 & tx_inst_bit_count0 & !tx_inst_bit_count2 & tx_inst_tx_byte_ff1
+  # JTCN122 & JTCN130 & !JTCN133 & tx_inst_bit_count0 & !tx_inst_bit_count2
+  # JTCN122 & tx_inst_bit_count0 & tx_inst_bit_count1 & !tx_inst_bit_count2 & tx_inst_tx_byte_ff3
+  # JTCN122 & !JTCN133 & tx_inst_bit_count0 & tx_inst_bit_count1 & !tx_inst_bit_count2
+  # JTCN122 & tx_inst_bit_count0 & tx_inst_bit_count1 & tx_inst_tx_byte_ff3 & tx_inst_tx_byte_ff7
+  # JTCN122 & !JTCN133 & tx_inst_bit_count0 & tx_inst_bit_count1 & tx_inst_tx_byte_ff7
+  # !JTCN123
+  # JTCN132 & tx_inst_bit_count1 & tx_inst_bit_count2 & tx_inst_tx_byte_ff6
+  # JTCN132 & JTCN133 & tx_inst_bit_count1 & tx_inst_tx_byte_ff2
+
+tx_inst_baud_count0.d  =>
+    !tx_inst_baud_count0
+
+tx_inst_baud_count0.ap  =>
+    0 
+
+tx_inst_baud_count0.ar  =>
+    JTCN98
+
+tx_inst_baud_count0.ck  =>
+    uart_clk
+
+tx_inst_baud_count1.d  =>
+    !tx_inst_baud_count0 & tx_inst_baud_count1
+  # tx_inst_baud_count0 & !tx_inst_baud_count1
+
+tx_inst_baud_count1.ap  =>
+    0 
+
+tx_inst_baud_count1.ar  =>
+    JTCN98
+
+tx_inst_baud_count1.ck  =>
+    uart_clk
+
+tx_inst_bit_count0.d  =>
+    JTCN132
+
+tx_inst_bit_count0.ap  =>
+    0 
+
+tx_inst_bit_count0.ar  =>
+    JTCN98
+
+tx_inst_bit_count0.ck  =>
+    tx_inst_baud_count1
+
+tx_inst_bit_count1.d  =>
+    JTCN122 & !JTCN128 & !JTCN129
+
+tx_inst_bit_count1.ap  =>
+    0 
+
+tx_inst_bit_count1.ar  =>
+    JTCN98
+
+tx_inst_bit_count1.ck  =>
+    tx_inst_baud_count1
+
+tx_inst_bit_count2.d  =>
+    JTCN122 & JTCN128 & !tx_inst_bit_count2
+  # JTCN122 & !JTCN128 & tx_inst_bit_count2
+
+tx_inst_bit_count2.ap  =>
+    0 
+
+tx_inst_bit_count2.ar  =>
+    JTCN98
+
+tx_inst_bit_count2.ck  =>
+    tx_inst_baud_count1
+
+tx_inst_state0.d  =>
+    !JTCN124
+  # JTCN122 & JTCN128 & tx_inst_bit_count2
+
+tx_inst_state0.ap  =>
+    0 
+
+tx_inst_state0.ar  =>
+    JTCN98
+
+tx_inst_state0.ck  =>
+    tx_inst_baud_count1
+
+tx_inst_state1.d  =>
+    JTCN123
+
+tx_inst_state1.ap  =>
+    0 
+
+tx_inst_state1.ar  =>
+    JTCN98
+
+tx_inst_state1.ck  =>
+    tx_inst_baud_count1
+
+tx_inst_stb_ff.d  =>
+    !JTCN125
+  # !JTCN124
+
+tx_inst_stb_ff.ap  =>
+    0 
+
+tx_inst_stb_ff.ar  =>
+    JTCN98
+
+tx_inst_stb_ff.ck  =>
+    uart_clk
+
+tx_inst_tx_byte_ff0.d  =>
+    stb & tx_byte0
+  # JTCN125 & tx_inst_tx_byte_ff0
+
+tx_inst_tx_byte_ff0.ap  =>
+    0 
+
+tx_inst_tx_byte_ff0.ar  =>
+    JTCN98
+
+tx_inst_tx_byte_ff0.ck  =>
+    uart_clk
+
+tx_inst_tx_byte_ff1.d  =>
+    stb & tx_byte1
+  # JTCN125 & tx_inst_tx_byte_ff1
+
+tx_inst_tx_byte_ff1.ap  =>
+    0 
+
+tx_inst_tx_byte_ff1.ar  =>
+    JTCN98
+
+tx_inst_tx_byte_ff1.ck  =>
+    uart_clk
+
+tx_inst_tx_byte_ff2.d  =>
+    stb & tx_byte2
+  # JTCN125 & tx_inst_tx_byte_ff2
+
+tx_inst_tx_byte_ff2.ap  =>
+    0 
+
+tx_inst_tx_byte_ff2.ar  =>
+    JTCN98
+
+tx_inst_tx_byte_ff2.ck  =>
+    uart_clk
+
+tx_inst_tx_byte_ff3.d  =>
+    stb & tx_byte3
+  # JTCN125 & tx_inst_tx_byte_ff3
+
+tx_inst_tx_byte_ff3.ap  =>
+    0 
+
+tx_inst_tx_byte_ff3.ar  =>
+    JTCN98
+
+tx_inst_tx_byte_ff3.ck  =>
+    uart_clk
+
+tx_inst_tx_byte_ff4.d  =>
+    stb & tx_byte4
+  # JTCN125 & tx_inst_tx_byte_ff4
+
+tx_inst_tx_byte_ff4.ap  =>
+    0 
+
+tx_inst_tx_byte_ff4.ar  =>
+    JTCN98
+
+tx_inst_tx_byte_ff4.ck  =>
+    uart_clk
+
+tx_inst_tx_byte_ff5.d  =>
+    stb & tx_byte5
+  # JTCN125 & tx_inst_tx_byte_ff5
+
+tx_inst_tx_byte_ff5.ap  =>
+    0 
+
+tx_inst_tx_byte_ff5.ar  =>
+    JTCN98
+
+tx_inst_tx_byte_ff5.ck  =>
+    uart_clk
+
+tx_inst_tx_byte_ff6.d  =>
+    stb & tx_byte6
+  # JTCN125 & tx_inst_tx_byte_ff6
+
+tx_inst_tx_byte_ff6.ap  =>
+    0 
+
+tx_inst_tx_byte_ff6.ar  =>
+    JTCN98
+
+tx_inst_tx_byte_ff6.ck  =>
+    uart_clk
+
+tx_inst_tx_byte_ff7.d  =>
+    stb & tx_byte7
+  # JTCN125 & tx_inst_tx_byte_ff7
+
+tx_inst_tx_byte_ff7.ap  =>
+    0 
+
+tx_inst_tx_byte_ff7.ar  =>
+    JTCN98
+
+tx_inst_tx_byte_ff7.ck  =>
+    uart_clk
+
+tx_rdy =>
+    JTCN127 & !tx_inst_state1
+
+uart_clk.d  =>
+    !JTCN99 & uart_clk
+  # JTCN99 & !uart_clk
+
+uart_clk.ap  =>
+    0 
+
+uart_clk.ar  =>
+    JTCN98
+
+uart_clk.ck  =>
+    clk
+
+uart_clock_inst_counter0.d  =>
+    JTCN101 & JTCN105
+
+uart_clock_inst_counter0.ap  =>
+    0 
+
+uart_clock_inst_counter0.ar  =>
+    JTCN98
+
+uart_clock_inst_counter0.ck  =>
+    clk
+
+uart_clock_inst_counter1.d  =>
+    uart_clock_inst_counter0 & !uart_clock_inst_counter1
+  # !uart_clock_inst_counter0 & uart_clock_inst_counter1
+
+uart_clock_inst_counter1.ap  =>
+    0 
+
+uart_clock_inst_counter1.ar  =>
+    JTCN98
+
+uart_clock_inst_counter1.ck  =>
+    clk
+
+uart_clock_inst_counter2.d  =>
+    !JTCN104 & uart_clock_inst_counter2
+  # JTCN104 & !uart_clock_inst_counter2
+
+uart_clock_inst_counter2.ap  =>
+    0 
+
+uart_clock_inst_counter2.ar  =>
+    JTCN98
+
+uart_clock_inst_counter2.ck  =>
+    clk
+
+uart_clock_inst_counter3.d  =>
+    !JTCN103 & uart_clock_inst_counter3
+  # JTCN103 & !uart_clock_inst_counter3
+
+uart_clock_inst_counter3.ap  =>
+    0 
+
+uart_clock_inst_counter3.ar  =>
+    JTCN98
+
+uart_clock_inst_counter3.ck  =>
+    clk
+
+uart_clock_inst_counter4.d  =>
+    !JTCN100 & JTCN101 & JTCN102
+  # !JTCN100 & JTCN101 & uart_clock_inst_counter4
+
+uart_clock_inst_counter4.ap  =>
+    0 
+
+uart_clock_inst_counter4.ar  =>
+    JTCN98
+
+uart_clock_inst_counter4.ck  =>
+    clk
+
+uart_clock_inst_counter5.d  =>
+    !JTCN100 & uart_clock_inst_counter5
+  # JTCN100 & !uart_clock_inst_counter5
+
+uart_clock_inst_counter5.ap  =>
+    0 
+
+uart_clock_inst_counter5.ar  =>
+    JTCN98
+
+uart_clock_inst_counter5.ck  =>
+    clk
+
+uart_clock_inst_counter6.d  =>
+    !JTCN106 & uart_clock_inst_counter6
+  # JTCN106 & !uart_clock_inst_counter6
+
+uart_clock_inst_counter6.ap  =>
+    0 
+
+uart_clock_inst_counter6.ar  =>
+    JTCN98
+
+uart_clock_inst_counter6.ck  =>
+    clk
+
+uart_clock_inst_counter7.d  =>
+    JTCN101 & JTCN106 & uart_clock_inst_counter6 & !uart_clock_inst_counter7
+  # JTCN101 & !JTCN106 & uart_clock_inst_counter7
+  # JTCN101 & !uart_clock_inst_counter6 & uart_clock_inst_counter7
+
+uart_clock_inst_counter7.ap  =>
+    0 
+
+uart_clock_inst_counter7.ar  =>
+    JTCN98
+
+uart_clock_inst_counter7.ck  =>
+    clk
+
+%END
