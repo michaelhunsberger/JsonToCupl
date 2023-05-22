@@ -2,7 +2,7 @@
 
 ## Overview
 
-JsonToCupl is a tool that aids in translating Verilog to CUPL.  The generated CUPL can then be synthesized by a program called [WinCupl](https://www.microchip.com/en-us/development-tool/WinCUPL).  WinCupl is still available as a free download by Microchip.  Microchip is one of the few manufacturers that still make 5 volt programmable logic.  There appears to be no open-source or affordable applications that can synthesize Verilog for these parts other than using CUPL.
+JsonToCupl is a tool that aids in translating Verilog to CUPL.  The generated CUPL can then be synthesized by a program called [WinCupl](https://www.microchip.com/en-us/development-tool/WinCUPL).  WinCupl is still available as a free download by Microchip.  Microchip is one of the few manufacturers that still make 5 volt programmable logic.  For ATF15XX CPLDs, another free\open source option would be [atf15xx_yosys](https://github.com/hoglet67/atf15xx_yosys).
 
 ## How it works
 
